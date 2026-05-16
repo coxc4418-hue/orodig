@@ -34,7 +34,7 @@ export default function Register() {
     registerMutation.mutate({ data: values }, {
       onSuccess: (res) => {
         login(res.token, res.member);
-        setLocation("/dashboard");
+        setLocation("/splash");
       },
       onError: (err: { message?: string }) => {
         toast({

@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import Splash from "@/pages/splash";
 import Dashboard from "@/pages/dashboard";
 import Network from "@/pages/network";
 import Earnings from "@/pages/earnings";
@@ -49,6 +50,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/splash" component={Splash} />
       <Route path="/:rest*" component={ProtectedRoutes} />
     </Switch>
   );

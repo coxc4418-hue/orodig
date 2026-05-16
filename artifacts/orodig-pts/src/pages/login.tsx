@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import loginBg from "@assets/image_1778968907902.png";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El usuario es obligatorio"),
@@ -30,7 +29,7 @@ export default function Login() {
     loginMutation.mutate({ data: values }, {
       onSuccess: (res) => {
         login(res.token, res.member);
-        setLocation("/dashboard");
+        setLocation("/splash");
       },
       onError: () => {
         toast({
@@ -43,16 +42,28 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${loginBg})`, opacity: 0.85 }}
-      />
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-black">
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: 0.85 }}
+      >
+        <source src={`${import.meta.env.BASE_URL}login-bg.mp4`} type="video/mp4" />
+      </video>
 
-      <div className="relative z-10 w-full max-w-sm mx-4 sm:mx-auto p-6 sm:p-8 rounded-2xl bg-black/65 backdrop-blur-xl border border-primary/30 shadow-[0_0_50px_rgba(255,215,0,0.2)]">
+      {/* Subtle dark overlay so the card is readable */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
+
+      {/* Login card */}
+      <div className="relative z-10 w-full max-w-sm mx-4 sm:mx-auto p-6 sm:p-8 rounded-2xl bg-black/65 backdrop-blur-xl border shadow-[0_0_50px_rgba(201,164,60,0.25)]"
+        style={{ borderColor: "hsl(42 68% 50% / 0.35)" }}>
         <div className="text-center mb-7">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-primary drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter drop-shadow-[0_0_20px_rgba(201,164,60,0.6)]"
+            style={{ color: "hsl(42,68%,50%)" }}>
             ORODIG <span className="text-white">PTS</span>
           </h1>
           <p className="text-white/80 mt-1 font-medium tracking-wide text-sm">Oro Digital Para Todos</p>
@@ -71,7 +82,8 @@ export default function Login() {
                       placeholder="Ingresa tu usuario"
                       {...field}
                       data-testid="input-username"
-                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/40 focus-visible:ring-primary h-11"
+                      className="bg-black/50 text-white placeholder:text-white/40 focus-visible:ring-[hsl(42,68%,50%)] h-11"
+                      style={{ borderColor: "hsl(42 68% 50% / 0.4)" }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -90,7 +102,8 @@ export default function Login() {
                       placeholder="Ingresa tu contraseña"
                       {...field}
                       data-testid="input-password"
-                      className="bg-black/50 border-primary/40 text-white placeholder:text-white/40 focus-visible:ring-primary h-11"
+                      className="bg-black/50 text-white placeholder:text-white/40 focus-visible:ring-[hsl(42,68%,50%)] h-11"
+                      style={{ borderColor: "hsl(42 68% 50% / 0.4)" }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -100,7 +113,11 @@ export default function Login() {
             <Button
               type="submit"
               data-testid="button-submit"
-              className="w-full bg-primary hover:bg-primary/90 text-black font-black tracking-widest uppercase h-12 shadow-[0_0_20px_rgba(255,215,0,0.4)] hover:shadow-[0_0_35px_rgba(255,215,0,0.6)] transition-all text-sm mt-2"
+              className="w-full font-black tracking-widest uppercase h-12 transition-all text-sm mt-2 text-black"
+              style={{
+                background: "linear-gradient(135deg, hsl(42,68%,42%), hsl(42,68%,56%), hsl(42,68%,44%))",
+                boxShadow: "0 0 25px hsl(42 68% 50% / 0.45)",
+              }}
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? "Verificando..." : "ACCEDER A LA PLATAFORMA"}
@@ -111,7 +128,8 @@ export default function Login() {
         <div className="mt-5 text-center">
           <p className="text-white/60 text-sm">
             ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-primary hover:text-primary/80 font-bold underline underline-offset-4">
+            <Link href="/register" className="font-bold underline underline-offset-4 hover:opacity-80"
+              style={{ color: "hsl(42,68%,60%)" }}>
               Únete a la Red
             </Link>
           </p>
