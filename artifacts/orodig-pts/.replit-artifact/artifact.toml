@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "ORODIG PTS"
+version = "1.0.0"
+id = "artifacts/orodig-pts"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18587
+
+[services.development]
+run = "pnpm --filter @workspace/orodig-pts run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/orodig-pts", "run", "build" ]
+publicDir = "artifacts/orodig-pts/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18587"
+BASE_PATH = "/"
