@@ -27,6 +27,16 @@ export interface RegisterInput {
   referralCode?: string | null;
 }
 
+export interface UpdateProfileInput {
+  fullName?: string;
+  email?: string;
+  /** @nullable */
+  phone?: string | null;
+  currentPassword?: string;
+  /** @minLength 6 */
+  newPassword?: string;
+}
+
 export type MemberRank = typeof MemberRank[keyof typeof MemberRank];
 
 
@@ -175,6 +185,17 @@ export interface Product {
   isActive: boolean;
 }
 
+export interface ProductInput {
+  name: string;
+  description: string;
+  price: number;
+  pointsReward: number;
+  category: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  isActive?: boolean;
+}
+
 export interface PurchaseInput {
   productId: number;
   /** @minimum 1 */
@@ -221,5 +242,75 @@ export interface WithdrawalInput {
   method: string;
   /** @nullable */
   accountDetails?: string | null;
+}
+
+export type AdminWithdrawalStatus = typeof AdminWithdrawalStatus[keyof typeof AdminWithdrawalStatus];
+
+
+export const AdminWithdrawalStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  paid: 'paid',
+} as const;
+
+export interface AdminWithdrawal {
+  id: number;
+  memberId: number;
+  memberName: string;
+  memberUsername: string;
+  amount: number;
+  method: string;
+  /** @nullable */
+  accountDetails?: string | null;
+  status: AdminWithdrawalStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type AdminWithdrawalUpdateStatus = typeof AdminWithdrawalUpdateStatus[keyof typeof AdminWithdrawalUpdateStatus];
+
+
+export const AdminWithdrawalUpdateStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+  paid: 'paid',
+} as const;
+
+export interface AdminWithdrawalUpdate {
+  status: AdminWithdrawalUpdateStatus;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type AdminMemberUpdateRank = typeof AdminMemberUpdateRank[keyof typeof AdminMemberUpdateRank];
+
+
+export const AdminMemberUpdateRank = {
+  Bronce: 'Bronce',
+  Plata: 'Plata',
+  Oro: 'Oro',
+  Platino: 'Platino',
+  Diamante: 'Diamante',
+  Embajador: 'Embajador',
+} as const;
+
+export interface AdminMemberUpdate {
+  rank?: AdminMemberUpdateRank;
+  isActive?: boolean;
+  balance?: number;
+}
+
+export type AdminStatsRankBreakdown = {[key: string]: number};
+
+export interface AdminStats {
+  totalMembers: number;
+  activeMembers: number;
+  totalPaid: number;
+  pendingWithdrawals: number;
+  pendingAmount: number;
+  totalVolume: number;
+  rankBreakdown: AdminStatsRankBreakdown;
 }
 

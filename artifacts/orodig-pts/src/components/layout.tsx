@@ -3,7 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, History, Trophy, ShoppingBag,
-  ArrowDownToLine, User, Menu, X, LogOut, ChevronRight
+  ArrowDownToLine, User, Menu, X, LogOut, ChevronRight, Shield
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -59,6 +59,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!currentMember) return <>{children}</>;
 
+  const isAdmin = currentMember.username === "admin";
+  const navItems = isAdmin
+    ? [...NAV_ITEMS, { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" }]
+    : NAV_ITEMS;
+
   const SidebarInner = () => (
     <>
       {/* Brand */}
@@ -100,8 +105,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-2 mb-2">Menú</div>
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = location === item.href;
+          const isAdminItem = item.href === "/admin";
           return (
             <Link
               key={item.href}
@@ -112,16 +118,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   ? "font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/4"
               }`}
-              style={isActive ? {
-                background: "hsl(42 68% 50% / 0.12)",
-                color: GOLD,
-                border: "1px solid hsl(42 68% 50% / 0.2)",
-              } : {}}
+              style={isActive
+                ? isAdminItem
+                  ? { background: "hsl(273 100% 50% / 0.12)", color: "hsl(273,100%,75%)", border: "1px solid hsl(273 100% 50% / 0.2)" }
+                  : { background: "hsl(42 68% 50% / 0.12)", color: GOLD, border: "1px solid hsl(42 68% 50% / 0.2)" }
+                : {}
+              }
             >
-              <item.icon className={`w-4 h-4 shrink-0 ${isActive ? "" : "group-hover:text-foreground"}`}
-                style={isActive ? { color: GOLD } : {}} />
+              <item.icon
+                className={`w-4 h-4 shrink-0 ${isActive ? "" : "group-hover:text-foreground"}`}
+                style={isActive ? { color: isAdminItem ? "hsl(273,100%,75%)" : GOLD } : {}}
+              />
               <span className="flex-1">{item.label}</span>
-              {isActive && <ChevronRight className="w-3 h-3" style={{ color: GOLD }} />}
+              {isActive && <ChevronRight className="w-3 h-3" style={{ color: isAdminItem ? "hsl(273,100%,75%)" : GOLD }} />}
             </Link>
           );
         })}

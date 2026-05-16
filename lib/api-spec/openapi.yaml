@@ -25,6 +25,8 @@ tags:
     description: Withdrawal requests
   - name: network
     description: Referral network tree
+  - name: admin
+    description: Admin-only operations
 
 paths:
   /healthz:
@@ -97,6 +99,27 @@ paths:
         "401":
           description: Unauthorized
 
+  /auth/profile:
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Update current member profile (name, email, phone, password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileInput"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "400":
+          description: Validation error or wrong current password
+
   /auth/logout:
     post:
       operationId: logout
@@ -138,7 +161,7 @@ paths:
     get:
       operationId: listMembers
       tags: [members]
-      summary: List all members (admin)
+      summary: List all members
       responses:
         "200":
           description: List of members
@@ -256,10 +279,23 @@ paths:
                   $ref: "#/components/schemas/Product"
 
   /purchases:
+    get:
+      operationId: listPurchases
+      tags: [products]
+      summary: List purchase history for the current member
+      responses:
+        "200":
+          description: Purchase history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purchase"
     post:
       operationId: createPurchase
       tags: [products]
-      summary: Record a product purchase (earns points)
+      summary: Record a product purchase (deducts balance, earns points + cashback)
       requestBody:
         required: true
         content:
@@ -273,6 +309,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Purchase"
+        "400":
+          description: Insufficient balance
 
   /withdrawals:
     get:
@@ -321,6 +359,156 @@ paths:
               schema:
                 $ref: "#/components/schemas/NetworkNode"
 
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Admin - platform-wide stats
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/withdrawals:
+    get:
+      operationId: adminListWithdrawals
+      tags: [admin]
+      summary: Admin - list all withdrawals with member info
+      responses:
+        "200":
+          description: All withdrawals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminWithdrawal"
+
+  /admin/withdrawals/{id}:
+    patch:
+      operationId: adminUpdateWithdrawal
+      tags: [admin]
+      summary: Admin - approve, reject or mark paid a withdrawal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminWithdrawalUpdate"
+      responses:
+        "200":
+          description: Withdrawal updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withdrawal"
+
+  /admin/products:
+    get:
+      operationId: adminListProducts
+      tags: [admin]
+      summary: Admin - list all products including inactive
+      responses:
+        "200":
+          description: All products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: adminCreateProduct
+      tags: [admin]
+      summary: Admin - create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /admin/products/{id}:
+    patch:
+      operationId: adminUpdateProduct
+      tags: [admin]
+      summary: Admin - update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /admin/members:
+    get:
+      operationId: adminListMembers
+      tags: [admin]
+      summary: Admin - list all members with full stats
+      responses:
+        "200":
+          description: All members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+
+  /admin/members/{id}:
+    patch:
+      operationId: adminUpdateMember
+      tags: [admin]
+      summary: Admin - update member rank, status or balance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminMemberUpdate"
+      responses:
+        "200":
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+
 components:
   schemas:
     HealthStatus:
@@ -358,6 +546,22 @@ components:
           type: ["string", "null"]
         referralCode:
           type: ["string", "null"]
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: ["string", "null"]
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
 
     AuthResponse:
       type: object
@@ -571,6 +775,25 @@ components:
         isActive:
           type: boolean
 
+    ProductInput:
+      type: object
+      required: [name, description, price, pointsReward, category]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        pointsReward:
+          type: number
+        category:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
     PurchaseInput:
       type: object
       required: [productId, quantity]
@@ -637,3 +860,72 @@ components:
           type: string
         accountDetails:
           type: ["string", "null"]
+
+    AdminWithdrawal:
+      type: object
+      required: [id, memberId, memberName, memberUsername, amount, method, status, createdAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        memberName:
+          type: string
+        memberUsername:
+          type: string
+        amount:
+          type: number
+        method:
+          type: string
+        accountDetails:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, approved, rejected, paid]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminWithdrawalUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected, paid]
+        notes:
+          type: ["string", "null"]
+
+    AdminMemberUpdate:
+      type: object
+      properties:
+        rank:
+          type: string
+          enum: [Bronce, Plata, Oro, Platino, Diamante, Embajador]
+        isActive:
+          type: boolean
+        balance:
+          type: number
+
+    AdminStats:
+      type: object
+      required: [totalMembers, activeMembers, totalPaid, pendingWithdrawals, pendingAmount, totalVolume, rankBreakdown]
+      properties:
+        totalMembers:
+          type: integer
+        activeMembers:
+          type: integer
+        totalPaid:
+          type: number
+        pendingWithdrawals:
+          type: integer
+        pendingAmount:
+          type: number
+        totalVolume:
+          type: number
+        rankBreakdown:
+          type: object
+          additionalProperties:
+            type: integer

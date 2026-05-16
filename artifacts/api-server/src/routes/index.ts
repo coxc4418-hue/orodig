@@ -8,6 +8,7 @@ import leaderboardRouter from "./leaderboard";
 import productsRouter from "./products";
 import withdrawalsRouter from "./withdrawals";
 import networkRouter from "./network";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(leaderboardRouter);
 router.use(productsRouter);
 router.use(withdrawalsRouter);
 router.use(networkRouter);
+router.use(adminRouter);
 
 export default router;

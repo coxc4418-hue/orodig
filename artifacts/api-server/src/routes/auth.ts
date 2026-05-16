@@ -6,6 +6,8 @@ import { signToken } from "../lib/auth";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { LoginBody, RegisterBody, GetMeResponse } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { addEarning, checkAndUpgradeRank } from "../lib/rankHelper";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -65,20 +67,23 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }
   const { username, password, fullName, email, phone, referralCode } = parsed.data;
 
-  const [existing] = await db.select().from(membersTable).where(eq(membersTable.username, username));
-  if (existing) {
+  const [existingUser] = await db.select().from(membersTable).where(eq(membersTable.username, username));
+  if (existingUser) {
     res.status(400).json({ error: "El nombre de usuario ya existe" });
     return;
   }
 
   let sponsorId: number | null = null;
+  let sponsor: typeof membersTable.$inferSelect | null = null;
+
   if (referralCode) {
-    const [sponsor] = await db.select().from(membersTable).where(eq(membersTable.referralCode, referralCode));
-    if (!sponsor) {
+    const [found] = await db.select().from(membersTable).where(eq(membersTable.referralCode, referralCode));
+    if (!found) {
       res.status(400).json({ error: "Código de referido no válido" });
       return;
     }
-    sponsorId = sponsor.id;
+    sponsorId = found.id;
+    sponsor = found;
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -101,15 +106,32 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     isActive: true,
   }).returning();
 
-  if (sponsorId) {
+  if (sponsor && sponsorId) {
+    // Fix: use sponsor.directReferrals (not the old `existing` variable)
     await db.update(membersTable).set({
-      directReferrals: (existing?.directReferrals ?? 0) + 1,
+      directReferrals: sponsor.directReferrals + 1,
+      totalNetwork: sponsor.totalNetwork + 1,
     }).where(eq(membersTable.id, sponsorId));
+
+    // Give sponsor a referral bonus earning ($50)
+    await addEarning(sponsorId, "referral", `Bono referido - ${fullName}`, 50, member.id);
+
+    // Walk up the chain and give leadership bonuses (10% to upline level 2)
+    if (sponsor.sponsorId) {
+      await addEarning(sponsor.sponsorId, "leadership", `Bono liderazgo - nuevo miembro en red`, 15, member.id);
+      // Update upline network count
+      const [grandSponsor] = await db.select().from(membersTable).where(eq(membersTable.id, sponsor.sponsorId));
+      if (grandSponsor) {
+        await db.update(membersTable).set({
+          totalNetwork: grandSponsor.totalNetwork + 1,
+        }).where(eq(membersTable.id, grandSponsor.id));
+      }
+    }
   }
 
   const token = signToken({ memberId: member.id, username: member.username });
   logger.info({ memberId: member.id }, "New member registered");
-  res.status(201).json({ member: formatMember(member), token });
+  res.status(201).json({ member: formatMember(member, sponsor?.fullName ?? null), token });
 });
 
 router.get("/auth/me", requireAuth, async (req: AuthRequest, res): Promise<void> => {
@@ -124,6 +146,61 @@ router.get("/auth/me", requireAuth, async (req: AuthRequest, res): Promise<void>
     sponsorName = sponsor?.fullName ?? null;
   }
   res.json(GetMeResponse.parse(formatMember(member, sponsorName)));
+});
+
+const UpdateProfileBody = z.object({
+  fullName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().nullable().optional(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(6).optional(),
+});
+
+router.put("/auth/profile", requireAuth, async (req: AuthRequest, res): Promise<void> => {
+  const parsed = UpdateProfileBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { fullName, email, phone, currentPassword, newPassword } = parsed.data;
+
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
+  if (!member) {
+    res.status(404).json({ error: "Member not found" });
+    return;
+  }
+
+  const updates: Partial<typeof membersTable.$inferInsert> = {};
+  if (fullName) updates.fullName = fullName;
+  if (email) updates.email = email;
+  if (phone !== undefined) updates.phone = phone;
+
+  if (newPassword) {
+    if (!currentPassword) {
+      res.status(400).json({ error: "Se requiere la contraseña actual" });
+      return;
+    }
+    const valid = await bcrypt.compare(currentPassword, member.password);
+    if (!valid) {
+      res.status(400).json({ error: "Contraseña actual incorrecta" });
+      return;
+    }
+    updates.password = await bcrypt.hash(newPassword, 10);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.json(formatMember(member));
+    return;
+  }
+
+  await db.update(membersTable).set(updates).where(eq(membersTable.id, req.memberId!));
+  const [updated] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
+  let sponsorName: string | null = null;
+  if (updated.sponsorId) {
+    const [sponsor] = await db.select().from(membersTable).where(eq(membersTable.id, updated.sponsorId));
+    sponsorName = sponsor?.fullName ?? null;
+  }
+  res.json(formatMember(updated, sponsorName));
 });
 
 router.post("/auth/logout", (_req, res): void => {

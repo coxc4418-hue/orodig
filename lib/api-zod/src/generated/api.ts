@@ -92,6 +92,42 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * @summary Update current member profile (name, email, phone, password)
+ */
+export const updateProfileBodyNewPasswordMin = 6;
+
+
+
+export const UpdateProfileBody = zod.object({
+  "fullName": zod.string().optional(),
+  "email": zod.string().email().optional(),
+  "phone": zod.string().nullish(),
+  "currentPassword": zod.string().optional(),
+  "newPassword": zod.string().min(updateProfileBodyNewPasswordMin).optional()
+})
+
+export const UpdateProfileResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "referralCode": zod.string(),
+  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "balance": zod.number(),
+  "points": zod.number(),
+  "totalEarnings": zod.number(),
+  "directReferrals": zod.number(),
+  "totalNetwork": zod.number(),
+  "isActive": zod.boolean(),
+  "sponsorId": zod.number().nullish(),
+  "sponsorName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Get aggregated dashboard summary for the current member
  */
 export const GetDashboardSummaryResponse = zod.object({
@@ -130,7 +166,7 @@ export const GetDashboardActivityResponse = zod.array(GetDashboardActivityRespon
 
 
 /**
- * @summary List all members (admin)
+ * @summary List all members
  */
 export const ListMembersResponseItem = zod.object({
   "id": zod.number(),
@@ -275,7 +311,23 @@ export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
 
 /**
- * @summary Record a product purchase (earns points)
+ * @summary List purchase history for the current member
+ */
+export const ListPurchasesResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "totalPrice": zod.number(),
+  "pointsEarned": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPurchasesResponse = zod.array(ListPurchasesResponseItem)
+
+
+/**
+ * @summary Record a product purchase (deducts balance, earns points + cashback)
  */
 
 
@@ -331,6 +383,180 @@ export const GetMyNetworkResponse = zod.object({
   "level": zod.number(),
   "avatarUrl": zod.string().nullish(),
   "children": zod.array(zod.unknown())
+})
+
+
+/**
+ * @summary Admin - platform-wide stats
+ */
+export const AdminGetStatsResponse = zod.object({
+  "totalMembers": zod.number(),
+  "activeMembers": zod.number(),
+  "totalPaid": zod.number(),
+  "pendingWithdrawals": zod.number(),
+  "pendingAmount": zod.number(),
+  "totalVolume": zod.number(),
+  "rankBreakdown": zod.record(zod.string(), zod.number())
+})
+
+
+/**
+ * @summary Admin - list all withdrawals with member info
+ */
+export const AdminListWithdrawalsResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "memberName": zod.string(),
+  "memberUsername": zod.string(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "accountDetails": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'paid']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const AdminListWithdrawalsResponse = zod.array(AdminListWithdrawalsResponseItem)
+
+
+/**
+ * @summary Admin - approve, reject or mark paid a withdrawal
+ */
+export const AdminUpdateWithdrawalParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateWithdrawalBody = zod.object({
+  "status": zod.enum(['approved', 'rejected', 'paid']),
+  "notes": zod.string().nullish()
+})
+
+export const AdminUpdateWithdrawalResponse = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "accountDetails": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'paid']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Admin - list all products including inactive
+ */
+export const AdminListProductsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "pointsReward": zod.number(),
+  "category": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+export const AdminListProductsResponse = zod.array(AdminListProductsResponseItem)
+
+
+/**
+ * @summary Admin - create a new product
+ */
+export const AdminCreateProductBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "pointsReward": zod.number(),
+  "category": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "isActive": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Admin - update a product
+ */
+export const AdminUpdateProductParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateProductBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "pointsReward": zod.number(),
+  "category": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "isActive": zod.boolean().optional()
+})
+
+export const AdminUpdateProductResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "pointsReward": zod.number(),
+  "category": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Admin - list all members with full stats
+ */
+export const AdminListMembersResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "referralCode": zod.string(),
+  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "balance": zod.number(),
+  "points": zod.number(),
+  "totalEarnings": zod.number(),
+  "directReferrals": zod.number(),
+  "totalNetwork": zod.number(),
+  "isActive": zod.boolean(),
+  "sponsorId": zod.number().nullish(),
+  "sponsorName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const AdminListMembersResponse = zod.array(AdminListMembersResponseItem)
+
+
+/**
+ * @summary Admin - update member rank, status or balance
+ */
+export const AdminUpdateMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateMemberBody = zod.object({
+  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']).optional(),
+  "isActive": zod.boolean().optional(),
+  "balance": zod.number().optional()
+})
+
+export const AdminUpdateMemberResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "referralCode": zod.string(),
+  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "balance": zod.number(),
+  "points": zod.number(),
+  "totalEarnings": zod.number(),
+  "directReferrals": zod.number(),
+  "totalNetwork": zod.number(),
+  "isActive": zod.boolean(),
+  "sponsorId": zod.number().nullish(),
+  "sponsorName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
 })
 
 

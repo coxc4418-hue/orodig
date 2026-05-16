@@ -1,16 +1,17 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RankBadge } from "@/components/layout";
-import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield } from "lucide-react";
+import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { useLogout } from "@workspace/api-client-react";
+import { useLogout, useUpdateProfile, useListPurchases, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const GOLD = "hsl(42,68%,50%)";
-
 const RANKS = ["Bronce", "Plata", "Oro", "Platino", "Diamante", "Embajador"];
 const RANK_NEXT: Record<string, string | null> = {
   Bronce: "Plata", Plata: "Oro", Oro: "Platino", Platino: "Diamante", Diamante: "Embajador", Embajador: null,
@@ -19,11 +20,37 @@ const RANK_THRESHOLDS: Record<string, number> = {
   Bronce: 500, Plata: 2000, Oro: 5000, Platino: 15000, Diamante: 45000, Embajador: Infinity,
 };
 
+const TABS = ["Perfil", "Editar", "Compras"] as const;
+type Tab = typeof TABS[number];
+
 export default function Profile() {
   const { currentMember, logout } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const logoutMutation = useLogout();
   const { data: summary } = useGetDashboardSummary();
+  const { data: purchases } = useListPurchases();
+  const updateProfile = useUpdateProfile({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "¡Perfil actualizado!", description: "Tu información fue guardada correctamente." });
+        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        setActiveTab("Perfil");
+      },
+      onError: () => {
+        toast({ title: "Error", description: "No se pudo actualizar el perfil. Verifica tu contraseña actual.", variant: "destructive" });
+      },
+    },
+  });
+
+  const [activeTab, setActiveTab] = useState<Tab>("Perfil");
+  const [editForm, setEditForm] = useState({
+    fullName: currentMember?.fullName ?? "",
+    email: currentMember?.email ?? "",
+    phone: currentMember?.phone ?? "",
+    currentPassword: "",
+    newPassword: "",
+  });
 
   if (!currentMember) return null;
 
@@ -34,6 +61,18 @@ export default function Profile() {
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, { onSettled: () => logout() });
+  };
+
+  const handleSaveProfile = () => {
+    const data: Record<string, unknown> = {};
+    if (editForm.fullName && editForm.fullName !== currentMember.fullName) data.fullName = editForm.fullName;
+    if (editForm.email && editForm.email !== currentMember.email) data.email = editForm.email;
+    if (editForm.phone !== (currentMember.phone ?? "")) data.phone = editForm.phone || null;
+    if (editForm.newPassword) {
+      data.currentPassword = editForm.currentPassword;
+      data.newPassword = editForm.newPassword;
+    }
+    updateProfile.mutate({ data: data as any });
   };
 
   const nextRank = RANK_NEXT[currentMember.rank];
@@ -52,141 +91,296 @@ export default function Profile() {
         <p className="text-muted-foreground text-sm">Tu identidad y estadísticas en la red.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-5">
-        {/* Left column */}
-        <div className="md:col-span-2 space-y-4">
-          <Card className="bg-card border-white/5 text-center py-6">
-            <CardContent className="px-4 flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black"
-                  style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
-                  {currentMember.fullName.charAt(0)}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-card flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white" />
-                </div>
-              </div>
+      {/* Tab nav */}
+      <div className="flex gap-1 p-1 rounded-xl bg-white/3 border border-white/5">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === tab ? "text-black" : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={activeTab === tab ? { background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` } : {}}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
-              <div>
-                <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
-                <p className="text-muted-foreground text-xs mb-2">@{currentMember.username}</p>
-                <RankBadge rank={currentMember.rank} />
-              </div>
-
-              {/* Rank progress */}
-              {nextRank && (
-                <div className="w-full text-left">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Progreso a {nextRank}</span>
-                    <span className="font-bold" style={{ color: GOLD }}>{progress.toFixed(0)}%</span>
+      {/* PERFIL TAB */}
+      {activeTab === "Perfil" && (
+        <div className="grid gap-4 md:grid-cols-5">
+          {/* Left column */}
+          <div className="md:col-span-2 space-y-4">
+            <Card className="bg-card border-white/5 text-center py-6">
+              <CardContent className="px-4 flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black"
+                    style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
+                    {currentMember.fullName.charAt(0)}
                   </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                    <div className="h-full rounded-full" style={{
-                      width: `${progress}%`,
-                      background: `linear-gradient(90deg, hsl(42,68%,38%), hsl(42,68%,58%))`,
-                    }} />
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-card flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-white" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Faltan ${Math.max(nextThreshold - totalEarnings, 0).toFixed(0)} para {nextRank}
-                  </p>
                 </div>
-              )}
-              {!nextRank && (
-                <div className="flex items-center gap-2 text-sm" style={{ color: GOLD }}>
-                  <Shield className="w-4 h-4" />
-                  <span className="font-bold">Rango máximo alcanzado</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Quick stats */}
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { icon: Users2, label: "Red Total",    value: currentMember.totalNetwork },
-              { icon: Star,   label: "Directos",     value: currentMember.directReferrals },
-              { icon: TrendingUp, label: "Total ganado", value: `$${totalEarnings.toFixed(0)}` },
-              { icon: Shield, label: "Estado",        value: "Activo" },
-            ].map(({ icon: Icon, label, value }) => (
-              <Card key={label} className="bg-card border-white/5">
-                <CardContent className="p-3 text-center">
-                  <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">{label}</div>
-                  <div className="text-base font-black text-white">{value}</div>
-                </CardContent>
-              </Card>
-            ))}
+                <div>
+                  <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
+                  <p className="text-muted-foreground text-xs mb-2">@{currentMember.username}</p>
+                  <RankBadge rank={currentMember.rank} />
+                </div>
+
+                {nextRank && (
+                  <div className="w-full text-left">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Progreso a {nextRank}</span>
+                      <span className="font-bold" style={{ color: GOLD }}>{progress.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                      <div className="h-full rounded-full" style={{
+                        width: `${progress}%`,
+                        background: `linear-gradient(90deg, hsl(42,68%,38%), hsl(42,68%,58%))`,
+                      }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Faltan ${Math.max(nextThreshold - totalEarnings, 0).toFixed(0)} para {nextRank}
+                    </p>
+                  </div>
+                )}
+                {!nextRank && (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: GOLD }}>
+                    <Shield className="w-4 h-4" />
+                    <span className="font-bold">Rango máximo alcanzado</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick stats */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: Users2, label: "Red Total", value: currentMember.totalNetwork },
+                { icon: Star,   label: "Directos",  value: currentMember.directReferrals },
+                { icon: TrendingUp, label: "Total ganado", value: `$${totalEarnings.toFixed(0)}` },
+                { icon: Shield, label: "Estado", value: "Activo" },
+              ].map(({ icon: Icon, label, value }) => (
+                <Card key={label} className="bg-card border-white/5">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">{label}</div>
+                    <div className="text-base font-black text-white">{value}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div className="md:col-span-3 space-y-4">
+            <Card className="bg-card border-white/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <User className="w-4 h-4" style={{ color: GOLD }} />
+                  Información de Contacto
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {[
+                  { icon: Mail,     label: "Correo",        value: currentMember.email },
+                  { icon: Phone,    label: "Teléfono",      value: currentMember.phone ?? "No registrado" },
+                  { icon: Calendar, label: "Miembro desde", value: format(new Date(currentMember.createdAt), "d 'de' MMMM 'de' yyyy", { locale: es }) },
+                  ...(currentMember.sponsorName ? [{ icon: User, label: "Patrocinador", value: `@${currentMember.sponsorName}` }] : []),
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex items-center gap-3 p-3 rounded-lg bg-white/3 border border-white/5">
+                    <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{label}</div>
+                      <div className="text-white text-sm font-medium truncate">{value}</div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Referral code */}
+            <Card className="bg-card border-white/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none"
+                style={{ background: GOLD, transform: "translate(40%, -40%)" }} />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2" style={{ color: GOLD }}>
+                  <Star className="w-4 h-4" />
+                  Tu Código de Referido
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Comparte este código para hacer crecer tu red y ganar ingresos pasivos de tu línea descendente.
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg px-4 py-3 font-mono text-lg font-black text-center tracking-[0.2em] border"
+                    style={{ background: "hsl(42 68% 50% / 0.08)", borderColor: "hsl(42 68% 50% / 0.3)", color: GOLD }}>
+                    {currentMember.referralCode}
+                  </div>
+                  <Button
+                    onClick={copyReferral}
+                    className="shrink-0 h-12 px-4 text-black font-bold"
+                    style={{ background: `linear-gradient(135deg, hsl(42,68%,40%), hsl(42,68%,56%))` }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button
+              variant="destructive"
+              className="w-full font-bold uppercase tracking-wider h-11 text-sm"
+              onClick={handleLogout}
+              disabled={logoutMutation.isPending}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {logoutMutation.isPending ? "Cerrando sesión..." : "Cerrar Sesión"}
+            </Button>
           </div>
         </div>
+      )}
 
-        {/* Right column */}
-        <div className="md:col-span-3 space-y-4">
-          <Card className="bg-card border-white/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <User className="w-4 h-4" style={{ color: GOLD }} />
-                Información de Contacto
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[
-                { icon: Mail,     label: "Correo",      value: currentMember.email },
-                { icon: Phone,    label: "Teléfono",    value: currentMember.phone ?? "No registrado" },
-                { icon: Calendar, label: "Miembro desde", value: format(new Date(currentMember.createdAt), "d 'de' MMMM 'de' yyyy", { locale: es }) },
-                ...(currentMember.sponsorName ? [{ icon: User, label: "Patrocinador", value: `@${currentMember.sponsorName}` }] : []),
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-center gap-3 p-3 rounded-lg bg-white/3 border border-white/5">
-                  <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{label}</div>
-                    <div className="text-white text-sm font-medium truncate">{value}</div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Referral code */}
-          <Card className="bg-card border-white/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none"
-              style={{ background: GOLD, transform: "translate(40%, -40%)" }} />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2" style={{ color: GOLD }}>
-                <Star className="w-4 h-4" />
-                Tu Código de Referido
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground mb-3">
-                Comparte este código para hacer crecer tu red y ganar ingresos pasivos de tu línea descendente.
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 rounded-lg px-4 py-3 font-mono text-lg font-black text-center tracking-[0.2em] border"
-                  style={{ background: "hsl(42 68% 50% / 0.08)", borderColor: "hsl(42 68% 50% / 0.3)", color: GOLD }}>
-                  {currentMember.referralCode}
-                </div>
-                <Button
-                  onClick={copyReferral}
-                  className="shrink-0 h-12 px-4 text-black font-bold"
-                  style={{ background: `linear-gradient(135deg, hsl(42,68%,40%), hsl(42,68%,56%))` }}
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
+      {/* EDITAR TAB */}
+      {activeTab === "Editar" && (
+        <Card className="bg-card border-white/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Edit2 className="w-4 h-4" style={{ color: GOLD }} />
+              Editar Información Personal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Nombre Completo
+                </label>
+                <input
+                  value={editForm.fullName}
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
+                />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Teléfono (opcional)
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
+                />
+              </div>
+            </div>
 
-          {/* Logout */}
-          <Button
-            variant="destructive"
-            className="w-full font-bold uppercase tracking-wider h-11 text-sm"
-            onClick={handleLogout}
-            disabled={logoutMutation.isPending}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            {logoutMutation.isPending ? "Cerrando sesión..." : "Cerrar Sesión"}
-          </Button>
+            <div className="border-t border-white/5 pt-4">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                Cambiar Contraseña (opcional)
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                    Contraseña Actual
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.currentPassword}
+                    onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                    Nueva Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.newPassword}
+                    onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="ghost"
+                className="flex-1 font-bold h-11"
+                onClick={() => setActiveTab("Perfil")}
+              >
+                <X className="w-4 h-4 mr-2" /> Cancelar
+              </Button>
+              <Button
+                className="flex-1 font-bold h-11 text-black"
+                style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` }}
+                onClick={handleSaveProfile}
+                disabled={updateProfile.isPending}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {updateProfile.isPending ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* COMPRAS TAB */}
+      {activeTab === "Compras" && (
+        <div className="space-y-3">
+          {(!purchases || (purchases as any[]).length === 0) ? (
+            <Card className="bg-card border-white/5">
+              <CardContent className="py-12 text-center">
+                <ShoppingBag className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="text-muted-foreground text-sm font-medium">Aún no has realizado compras.</p>
+                <p className="text-muted-foreground text-xs mt-1">Visita la Tienda para adquirir productos y ganar puntos.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            (purchases as any[]).map((p) => (
+              <Card key={p.id} className="bg-card border-white/5">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "hsl(42 68% 50% / 0.12)", border: "1px solid hsl(42 68% 50% / 0.2)" }}>
+                    <Package className="w-5 h-5" style={{ color: GOLD }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm">{p.productName}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {format(new Date(p.createdAt), "d 'de' MMM yyyy, HH:mm", { locale: es })}
+                      {p.quantity > 1 && ` · Qty: ${p.quantity}`}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-lg font-black" style={{ color: GOLD }}>${Number(p.totalPrice).toFixed(2)}</div>
+                    <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                      +{Number(p.pointsEarned).toLocaleString()} pts
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

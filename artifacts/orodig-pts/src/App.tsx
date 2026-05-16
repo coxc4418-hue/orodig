@@ -16,6 +16,7 @@ import Leaderboard from "@/pages/leaderboard";
 import Products from "@/pages/products";
 import Withdrawals from "@/pages/withdrawals";
 import Profile from "@/pages/profile";
+import Admin from "@/pages/admin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ function ProtectedRoutes() {
           <Route path="/products" component={Products} />
           <Route path="/withdrawals" component={Withdrawals} />
           <Route path="/profile" component={Profile} />
+          <Route path="/admin" component={Admin} />
           <Route component={NotFound} />
         </Switch>
       </AppLayout>
