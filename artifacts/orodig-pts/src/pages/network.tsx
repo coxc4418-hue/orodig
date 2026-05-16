@@ -2,7 +2,10 @@ import { useGetMemberNetwork } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RankBadge } from "@/components/layout";
-import { Users } from "lucide-react";
+import { Users, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+const GOLD = "hsl(42,68%,50%)";
 
 type NetworkNode = {
   id: number;
@@ -18,42 +21,61 @@ type NetworkNode = {
   children: NetworkNode[];
 };
 
-function TreeNode({ node, level = 0 }: { node: NetworkNode; level?: number }) {
+function TreeNode({ node, level = 0, isRoot = false }: { node: NetworkNode; level?: number; isRoot?: boolean }) {
+  const [expanded, setExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
 
   return (
-    <div className="relative">
+    <div className={level > 0 ? "ml-4 sm:ml-6 border-l border-white/8 pl-3 sm:pl-4" : ""}>
       <div
-        className={`flex items-center p-2.5 sm:p-3 my-1.5 rounded-lg border ${node.isActive ? "border-primary/20 bg-background/50" : "border-border/20 bg-background/20 opacity-60"} hover:border-primary/40 transition-colors`}
-        style={{ marginLeft: `${level * 1.5}rem` }}
-        data-testid={`node-network-${node.id}`}
+        className={`flex items-center gap-3 p-3 rounded-xl border my-1.5 transition-all ${
+          isRoot
+            ? "border-[hsl(42_68%_50%_/_0.3)] bg-[hsl(42_68%_50%_/_0.05)]"
+            : node.isActive
+            ? "border-white/8 bg-white/2 hover:border-white/15"
+            : "border-white/4 bg-white/1 opacity-50"
+        }`}
       >
-        <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-              {node.fullName.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-white text-sm truncate">{node.fullName}</span>
-                <span className="text-xs text-muted-foreground hidden sm:inline">@{node.username}</span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <RankBadge rank={node.rank} />
-                <span className="text-[10px] text-muted-foreground">Nivel {node.level}</span>
-              </div>
-            </div>
-          </div>
+        {/* Avatar */}
+        <div
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 text-black"
+          style={isRoot
+            ? { background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }
+            : { background: "rgba(255,255,255,0.08)", color: "white" }}
+        >
+          {node.fullName.charAt(0)}
+        </div>
 
-          <div className="text-right shrink-0">
-            <div className="text-sm font-black text-primary">${node.totalEarnings.toFixed(2)}</div>
-            <div className="text-[10px] text-muted-foreground">{node.directReferrals} directos</div>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-bold text-sm ${isRoot ? "" : "text-white"}`} style={isRoot ? { color: GOLD } : {}}>
+              {node.fullName}
+            </span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">@{node.username}</span>
+            <RankBadge rank={node.rank} />
+            {!node.isActive && <span className="text-[9px] text-muted-foreground uppercase font-bold">Inactivo</span>}
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+            <span>Nivel {node.level}</span>
+            <span>{node.directReferrals} directos</span>
+            <span className="font-bold" style={{ color: GOLD }}>${node.totalEarnings.toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Expand toggle */}
+        {hasChildren && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="shrink-0 p-1 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
+          >
+            {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
-      {hasChildren && (
-        <div className="relative border-l border-border/40 ml-3 sm:ml-4 pl-1">
+      {hasChildren && expanded && (
+        <div>
           {node.children.map((child) => (
             <TreeNode key={child.id} node={child} level={level + 1} />
           ))}
@@ -68,35 +90,65 @@ export default function Network() {
   const { data: network, isLoading } = useGetMemberNetwork(currentMember!.id);
 
   if (isLoading) {
-    return <div className="text-primary font-bold animate-pulse pt-4">Cargando red de referidos...</div>;
+    return (
+      <div className="space-y-3 pt-2">
+        {[1,2,3].map(i => <div key={i} className={`h-14 rounded-xl bg-white/5 animate-pulse`} style={{ marginLeft: `${(i-1)*1.5}rem` }} />)}
+      </div>
+    );
   }
+
+  const totalInNetwork = network
+    ? countNodes(network as NetworkNode) - 1
+    : 0;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">MI RED DE REFERIDOS</h1>
-        <p className="text-muted-foreground text-sm">Tu organización de riqueza pasiva.</p>
+        <p className="text-muted-foreground text-sm">Visualiza tu organización de ingresos pasivos.</p>
       </div>
 
-      <Card className="bg-card border-border/50">
+      {/* Stats bar */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Miembros en la red", value: currentMember!.totalNetwork },
+          { label: "Referidos directos",  value: currentMember!.directReferrals },
+          { label: "Niveles visibles",    value: "3" },
+        ].map(({ label, value }) => (
+          <Card key={label} className="bg-card border-white/5 text-center">
+            <CardContent className="p-3">
+              <div className="text-xl font-black text-white">{value}</div>
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">{label}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="bg-card border-white/5">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Users className="w-4 h-4 text-primary" />
-            Estructura de la Red (hasta 3 niveles)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4" style={{ color: GOLD }} />
+              Árbol de Red (hasta 3 niveles)
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">{totalInNetwork} miembro{totalInNetwork !== 1 ? "s" : ""}</span>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <div className="min-w-[300px]">
-              {network ? (
-                <TreeNode node={network as NetworkNode} />
-              ) : (
-                <div className="text-center p-8 text-muted-foreground text-sm">Sin datos de red. ¡Empieza a reclutar!</div>
-              )}
+          {network ? (
+            <TreeNode node={network as NetworkNode} isRoot={true} />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-10 gap-3 text-muted-foreground">
+              <Users className="w-10 h-10 opacity-30" />
+              <p className="text-sm text-center">Tu red está vacía. Comparte tu código de referido para comenzar a construir tu organización.</p>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
+}
+
+function countNodes(node: NetworkNode): number {
+  return 1 + (node.children?.reduce((s, c) => s + countNodes(c), 0) ?? 0);
 }

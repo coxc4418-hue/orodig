@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Member } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Member } from "@workspace/api-client-react";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
