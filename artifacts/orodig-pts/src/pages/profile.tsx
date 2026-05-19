@@ -28,7 +28,7 @@ function getMemberStatus(lastPaymentAt: string | null | undefined): { label: str
   return { label: "Gris — Eliminado", color: "#6b7280", bg: "#6b728015", daysLeft: 0 };
 }
 
-const TABS = ["Perfil", "Editar", "Compras"] as const;
+const TABS = ["Perfil", "Compras"] as const;
 type Tab = typeof TABS[number];
 
 export default function Profile() {
@@ -278,104 +278,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* EDITAR TAB */}
-      {activeTab === "Editar" && (
-        <Card className="bg-card border-white/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Edit2 className="w-4 h-4" style={{ color: GOLD }} />
-              Editar Información Personal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Nombre Completo
-                </label>
-                <input
-                  value={editForm.fullName}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Correo Electrónico
-                </label>
-                <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Teléfono (opcional)
-                </label>
-                <input
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
-                />
-              </div>
-            </div>
 
-            <div className="border-t border-white/5 pt-4">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Cambiar Contraseña (opcional)
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Contraseña Actual
-                  </label>
-                  <input
-                    type="password"
-                    value={editForm.currentPassword}
-                    onChange={(e) => setEditForm({ ...editForm, currentPassword: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Nueva Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    value={editForm.newPassword}
-                    onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
-                    placeholder="Mínimo 6 caracteres"
-                    className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30 transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="ghost"
-                className="flex-1 font-bold h-11"
-                onClick={() => setActiveTab("Perfil")}
-              >
-                <X className="w-4 h-4 mr-2" /> Cancelar
-              </Button>
-              <Button
-                className="flex-1 font-bold h-11 text-black"
-                style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` }}
-                onClick={handleSaveProfile}
-                disabled={updateProfile.isPending}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {updateProfile.isPending ? "Guardando..." : "Guardar Cambios"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* COMPRAS TAB */}
       {activeTab === "Compras" && (

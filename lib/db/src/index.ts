@@ -59,6 +59,38 @@ function sanitizeData(data: any): any {
   return result;
 }
 
+const COLUMN_MAP: Record<string, string> = {
+  full_name: "fullName",
+  referral_code: "referralCode",
+  sponsor_id: "sponsorId",
+  avatar_url: "avatarUrl",
+  last_payment_at: "lastPaymentAt",
+  referral_status: "referralStatus",
+  activated_at: "activatedAt",
+  expires_at: "expiresAt",
+  last_repurchase_at: "lastRepurchaseAt",
+  created_at: "createdAt",
+  updated_at: "updatedAt",
+  direct_referrals: "directReferrals",
+  total_network: "totalNetwork",
+  is_active: "isActive",
+  member_id: "memberId",
+  purchase_id: "purchaseId",
+  renewed_at: "renewedAt",
+  previous_expiration: "previousExpiration",
+  new_expiration: "newExpiration",
+  product_id: "productId",
+  product_name: "productName",
+  total_price: "totalPrice",
+  points_earned: "pointsEarned",
+  source_member_id: "sourceMemberId",
+  account_details: "accountDetails",
+};
+
+function translateFieldName(name: string): string {
+  return COLUMN_MAP[name] || name;
+}
+
 function parseCondition(cond: any): any {
   if (!cond) return null;
   
@@ -78,7 +110,7 @@ function parseCondition(cond: any): any {
       if (chunk && typeof chunk === "object") {
         // If it is a Drizzle column representation
         if (chunk.name && (chunk.table || chunk.columnType)) {
-          fieldName = chunk.name;
+          fieldName = translateFieldName(chunk.name);
         }
         // If it is a Param chunk
         else if (chunk.value !== undefined) {
@@ -107,13 +139,13 @@ function parseCondition(cond: any): any {
 
   // Fallback to legacy Drizzle structure
   if (cond.left && cond.right !== undefined) {
-    const fieldName = cond.left.name || cond.left.mapFromDriverValue || "id";
+    const fieldName = translateFieldName(cond.left.name || cond.left.mapFromDriverValue || "id");
     const val = cond.right && typeof cond.right === "object" && cond.right.value !== undefined ? cond.right.value : cond.right;
     return { type: "eq", field: fieldName, value: val };
   }
 
   if (cond.left && cond.values && Array.isArray(cond.values)) {
-    const fieldName = cond.left.name || cond.left.mapFromDriverValue || "id";
+    const fieldName = translateFieldName(cond.left.name || cond.left.mapFromDriverValue || "id");
     return { type: "in", field: fieldName, value: cond.values };
   }
 
@@ -143,10 +175,10 @@ class FirestoreQueryBuilder {
     // Support Drizzle order by desc(table.field)
     if (orderClause) {
       if (orderClause.direction) {
-        this.orderField = orderClause.expression?.name || "id";
+        this.orderField = translateFieldName(orderClause.expression?.name || "id");
         this.orderDir = orderClause.direction;
       } else if (orderClause.field) {
-        this.orderField = orderClause.field;
+        this.orderField = translateFieldName(orderClause.field);
         this.orderDir = orderClause.dir || "asc";
       }
     }
@@ -300,15 +332,15 @@ export const db = {
 
 // Re-export custom helpers so we are fully robust
 export function eq(field: any, value: any) {
-  return { type: "eq", field: field.name, value };
+  return { type: "eq", field: translateFieldName(field.name), value };
 }
 
 export function inArray(field: any, value: any[]) {
-  return { type: "in", field: field.name, value };
+  return { type: "in", field: translateFieldName(field.name), value };
 }
 
 export function desc(field: any) {
-  return { field: field.name, dir: "desc" };
+  return { field: translateFieldName(field.name), dir: "desc" };
 }
 
 export * from "./schema";
