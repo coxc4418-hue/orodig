@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, History, Trophy, ShoppingBag,
   ArrowDownToLine, User, Menu, X, LogOut, ChevronRight, Shield,
-  Gift, Layers, Diamond, Wallet
+  Gift, Layers, Diamond, Wallet, Globe
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -32,6 +32,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const NAV_ITEMS = [
   { href: "/dashboard",  icon: LayoutDashboard, label: "Panel Principal", short: "Panel" },
+  { href: "/community",  icon: Globe,           label: "Comunidad Social", short: "Comunidad" },
   { href: "/network",    icon: Users,           label: "Mi Red",          short: "Red" },
   { href: "/earnings",   icon: History,         label: "Ganancias",       short: "Ganancias" },
   { href: "/leaderboard",icon: Trophy,          label: "Clasificación",   short: "Top" },
@@ -45,7 +46,7 @@ const NAV_ITEMS = [
 
 const BOTTOM_NAV = [
   { href: "/dashboard",  icon: LayoutDashboard, label: "Panel" },
-  { href: "/network",    icon: Users,           label: "Red" },
+  { href: "/community",  icon: Globe,           label: "Comunidad" },
   { href: "/products",   icon: ShoppingBag,     label: "Tienda" },
   { href: "/premios",    icon: Gift,            label: "Premios" },
   { href: "/profile",    icon: User,            label: "Perfil" },
@@ -61,10 +62,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isAdmin = currentMember.username === "admin";
   const navItems = isAdmin
-    ? [{ href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" }]
+    ? [
+        { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" },
+        { href: "/community", icon: Globe, label: "Comunidad Social", short: "Comunidad" }
+      ]
     : NAV_ITEMS;
   const bottomNavItems = isAdmin
-    ? [{ href: "/admin", icon: Shield, label: "Admin" }]
+    ? [
+        { href: "/admin", icon: Shield, label: "Admin" },
+        { href: "/community", icon: Globe, label: "Comunidad" }
+      ]
     : BOTTOM_NAV;
 
   // Membership status from lastPaymentAt

@@ -5,4 +5,7 @@ export * from "./purchases";
 export * from "./withdrawals";
 export * from "./renewals";
 export * from "./deposits";
-
+export * from "./posts";
+export * from "./postComments";
+export * from "./follows";
+export * from "./conferences";

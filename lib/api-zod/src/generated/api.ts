@@ -725,3 +725,207 @@ export const AdminUpdateMemberResponse = zod.object({
 })
 
 
+/**
+ * @summary Get social feed (all posts newest first)
+ */
+export const GetCommunityFeedResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "author": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "rank": zod.string().optional()
+}).optional(),
+  "content": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "likesCount": zod.number(),
+  "commentsCount": zod.number(),
+  "likedByMe": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const GetCommunityFeedResponse = zod.array(GetCommunityFeedResponseItem)
+
+
+/**
+ * @summary Create a new post
+ */
+export const createPostBodyContentMax = 2000;
+
+
+
+export const CreatePostBody = zod.object({
+  "content": zod.string().min(1).max(createPostBodyContentMax),
+  "imageUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete own post
+ */
+export const DeletePostParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Toggle like on a post
+ */
+export const TogglePostLikeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const TogglePostLikeResponse = zod.object({
+  "liked": zod.boolean(),
+  "likesCount": zod.number()
+})
+
+
+/**
+ * @summary Get comments for a post
+ */
+export const GetPostCommentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetPostCommentsResponseItem = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "memberId": zod.number(),
+  "author": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "rank": zod.string().optional()
+}).optional(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const GetPostCommentsResponse = zod.array(GetPostCommentsResponseItem)
+
+
+/**
+ * @summary Add a comment to a post
+ */
+export const CreateCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const createCommentBodyContentMax = 1000;
+
+
+
+export const CreateCommentBody = zod.object({
+  "content": zod.string().min(1).max(createCommentBodyContentMax)
+})
+
+
+/**
+ * @summary Delete own comment
+ */
+export const DeleteCommentParams = zod.object({
+  "postId": zod.coerce.number(),
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get social profile of a member
+ */
+export const GetSocialProfileParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetSocialProfileResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "rank": zod.string(),
+  "totalEarnings": zod.number().optional(),
+  "directReferrals": zod.number().optional(),
+  "followersCount": zod.number(),
+  "followingCount": zod.number(),
+  "postsCount": zod.number(),
+  "isFollowing": zod.boolean()
+})
+
+
+/**
+ * @summary Follow or unfollow a member
+ */
+export const ToggleFollowParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ToggleFollowResponse = zod.object({
+  "following": zod.boolean()
+})
+
+
+/**
+ * @summary List all conferences
+ */
+export const ListConferencesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "streamUrl": zod.string(),
+  "isLive": zod.boolean(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "endedAt": zod.coerce.date().nullish(),
+  "chatMessages": zod.array(zod.object({
+  "memberId": zod.number(),
+  "username": zod.string(),
+  "fullName": zod.string(),
+  "content": zod.string(),
+  "sentAt": zod.string()
+})).optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListConferencesResponse = zod.array(ListConferencesResponseItem)
+
+
+/**
+ * @summary Create a conference (admin only)
+ */
+export const CreateConferenceBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "streamUrl": zod.string().optional(),
+  "scheduledAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Update conference (admin) or send chat message (any member)
+ */
+export const UpdateConferenceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateConferenceBody = zod.object({
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "streamUrl": zod.string().optional(),
+  "isLive": zod.boolean().optional(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "endedAt": zod.coerce.date().nullish(),
+  "chatMessage": zod.object({
+  "memberId": zod.number().optional(),
+  "username": zod.string().optional(),
+  "content": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Delete conference (admin only)
+ */
+export const DeleteConferenceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+

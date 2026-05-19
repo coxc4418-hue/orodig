@@ -31,20 +31,30 @@ import type {
   AdminWithdrawal,
   AdminWithdrawalUpdate,
   AuthResponse,
+  Comment,
+  CommentInput,
+  Conference,
+  ConferenceInput,
+  ConferenceUpdate,
   DashboardSummary,
   Deposit,
   DepositInput,
   Earning,
+  FollowResult,
   HealthStatus,
   LeaderboardEntry,
+  LikeResult,
   LoginInput,
   Member,
   NetworkNode,
+  Post,
+  PostInput,
   Product,
   ProductInput,
   Purchase,
   PurchaseInput,
   RegisterInput,
+  SocialProfile,
   UpdateProfileInput,
   Withdrawal,
   WithdrawalInput
@@ -2674,5 +2684,951 @@ export const useAdminUpdateMember = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAdminUpdateMemberMutationOptions(options));
+    }
+
+export const getGetCommunityFeedUrl = () => {
+
+
+
+
+  return `/api/community/feed`
+}
+
+/**
+ * @summary Get social feed (all posts newest first)
+ */
+export const getCommunityFeed = async ( options?: RequestInit): Promise<Post[]> => {
+
+  return customFetch<Post[]>(getGetCommunityFeedUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCommunityFeedQueryKey = () => {
+    return [
+    `/api/community/feed`
+    ] as const;
+    }
+
+
+export const getGetCommunityFeedQueryOptions = <TData = Awaited<ReturnType<typeof getCommunityFeed>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunityFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCommunityFeedQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommunityFeed>>> = ({ signal }) => getCommunityFeed({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommunityFeed>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCommunityFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getCommunityFeed>>>
+export type GetCommunityFeedQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get social feed (all posts newest first)
+ */
+
+export function useGetCommunityFeed<TData = Awaited<ReturnType<typeof getCommunityFeed>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunityFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCommunityFeedQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreatePostUrl = () => {
+
+
+
+
+  return `/api/community/posts`
+}
+
+/**
+ * @summary Create a new post
+ */
+export const createPost = async (postInput: PostInput, options?: RequestInit): Promise<Post> => {
+
+  return customFetch<Post>(getCreatePostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      postInput,)
+  }
+);}
+
+
+
+
+export const getCreatePostMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPost>>, TError,{data: BodyType<PostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPost>>, TError,{data: BodyType<PostInput>}, TContext> => {
+
+const mutationKey = ['createPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPost>>, {data: BodyType<PostInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePostMutationResult = NonNullable<Awaited<ReturnType<typeof createPost>>>
+    export type CreatePostMutationBody = BodyType<PostInput>
+    export type CreatePostMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a new post
+ */
+export const useCreatePost = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPost>>, TError,{data: BodyType<PostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPost>>,
+        TError,
+        {data: BodyType<PostInput>},
+        TContext
+      > => {
+      return useMutation(getCreatePostMutationOptions(options));
+    }
+
+export const getDeletePostUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/posts/${id}`
+}
+
+/**
+ * @summary Delete own post
+ */
+export const deletePost = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeletePostUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePostMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePost>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePost>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deletePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePost>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePost(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof deletePost>>>
+
+    export type DeletePostMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete own post
+ */
+export const useDeletePost = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePost>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePost>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeletePostMutationOptions(options));
+    }
+
+export const getTogglePostLikeUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/posts/${id}/like`
+}
+
+/**
+ * @summary Toggle like on a post
+ */
+export const togglePostLike = async (id: number, options?: RequestInit): Promise<LikeResult> => {
+
+  return customFetch<LikeResult>(getTogglePostLikeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTogglePostLikeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof togglePostLike>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof togglePostLike>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['togglePostLike'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof togglePostLike>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  togglePostLike(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TogglePostLikeMutationResult = NonNullable<Awaited<ReturnType<typeof togglePostLike>>>
+
+    export type TogglePostLikeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Toggle like on a post
+ */
+export const useTogglePostLike = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof togglePostLike>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof togglePostLike>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getTogglePostLikeMutationOptions(options));
+    }
+
+export const getGetPostCommentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/posts/${id}/comments`
+}
+
+/**
+ * @summary Get comments for a post
+ */
+export const getPostComments = async (id: number, options?: RequestInit): Promise<Comment[]> => {
+
+  return customFetch<Comment[]>(getGetPostCommentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPostCommentsQueryKey = (id: number,) => {
+    return [
+    `/api/community/posts/${id}/comments`
+    ] as const;
+    }
+
+
+export const getGetPostCommentsQueryOptions = <TData = Awaited<ReturnType<typeof getPostComments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPostCommentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostComments>>> = ({ signal }) => getPostComments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPostCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof getPostComments>>>
+export type GetPostCommentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get comments for a post
+ */
+
+export function useGetPostComments<TData = Awaited<ReturnType<typeof getPostComments>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPostCommentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateCommentUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/posts/${id}/comments`
+}
+
+/**
+ * @summary Add a comment to a post
+ */
+export const createComment = async (id: number,
+    commentInput: CommentInput, options?: RequestInit): Promise<Comment> => {
+
+  return customFetch<Comment>(getCreateCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      commentInput,)
+  }
+);}
+
+
+
+
+export const getCreateCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,{id: number;data: BodyType<CommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,{id: number;data: BodyType<CommentInput>}, TContext> => {
+
+const mutationKey = ['createComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createComment>>, {id: number;data: BodyType<CommentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCommentMutationResult = NonNullable<Awaited<ReturnType<typeof createComment>>>
+    export type CreateCommentMutationBody = BodyType<CommentInput>
+    export type CreateCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a comment to a post
+ */
+export const useCreateComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComment>>, TError,{id: number;data: BodyType<CommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createComment>>,
+        TError,
+        {id: number;data: BodyType<CommentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCommentMutationOptions(options));
+    }
+
+export const getDeleteCommentUrl = (postId: number,
+    id: number,) => {
+
+
+
+
+  return `/api/community/posts/${postId}/comments/${id}`
+}
+
+/**
+ * @summary Delete own comment
+ */
+export const deleteComment = async (postId: number,
+    id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCommentUrl(postId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,{postId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,{postId: number;id: number}, TContext> => {
+
+const mutationKey = ['deleteComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteComment>>, {postId: number;id: number}> = (props) => {
+          const {postId,id} = props ?? {};
+
+          return  deleteComment(postId,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCommentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteComment>>>
+
+    export type DeleteCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete own comment
+ */
+export const useDeleteComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,{postId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteComment>>,
+        TError,
+        {postId: number;id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCommentMutationOptions(options));
+    }
+
+export const getGetSocialProfileUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/members/${id}/profile`
+}
+
+/**
+ * @summary Get social profile of a member
+ */
+export const getSocialProfile = async (id: number, options?: RequestInit): Promise<SocialProfile> => {
+
+  return customFetch<SocialProfile>(getGetSocialProfileUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSocialProfileQueryKey = (id: number,) => {
+    return [
+    `/api/community/members/${id}/profile`
+    ] as const;
+    }
+
+
+export const getGetSocialProfileQueryOptions = <TData = Awaited<ReturnType<typeof getSocialProfile>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSocialProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSocialProfileQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSocialProfile>>> = ({ signal }) => getSocialProfile(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSocialProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSocialProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getSocialProfile>>>
+export type GetSocialProfileQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get social profile of a member
+ */
+
+export function useGetSocialProfile<TData = Awaited<ReturnType<typeof getSocialProfile>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSocialProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSocialProfileQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getToggleFollowUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/follow/${id}`
+}
+
+/**
+ * @summary Follow or unfollow a member
+ */
+export const toggleFollow = async (id: number, options?: RequestInit): Promise<FollowResult> => {
+
+  return customFetch<FollowResult>(getToggleFollowUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getToggleFollowMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['toggleFollow'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleFollow>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  toggleFollow(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleFollowMutationResult = NonNullable<Awaited<ReturnType<typeof toggleFollow>>>
+
+    export type ToggleFollowMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Follow or unfollow a member
+ */
+export const useToggleFollow = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleFollow>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getToggleFollowMutationOptions(options));
+    }
+
+export const getListConferencesUrl = () => {
+
+
+
+
+  return `/api/community/conferences`
+}
+
+/**
+ * @summary List all conferences
+ */
+export const listConferences = async ( options?: RequestInit): Promise<Conference[]> => {
+
+  return customFetch<Conference[]>(getListConferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListConferencesQueryKey = () => {
+    return [
+    `/api/community/conferences`
+    ] as const;
+    }
+
+
+export const getListConferencesQueryOptions = <TData = Awaited<ReturnType<typeof listConferences>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListConferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listConferences>>> = ({ signal }) => listConferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listConferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListConferencesQueryResult = NonNullable<Awaited<ReturnType<typeof listConferences>>>
+export type ListConferencesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all conferences
+ */
+
+export function useListConferences<TData = Awaited<ReturnType<typeof listConferences>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListConferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateConferenceUrl = () => {
+
+
+
+
+  return `/api/community/conferences`
+}
+
+/**
+ * @summary Create a conference (admin only)
+ */
+export const createConference = async (conferenceInput: ConferenceInput, options?: RequestInit): Promise<Conference> => {
+
+  return customFetch<Conference>(getCreateConferenceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      conferenceInput,)
+  }
+);}
+
+
+
+
+export const getCreateConferenceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConference>>, TError,{data: BodyType<ConferenceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createConference>>, TError,{data: BodyType<ConferenceInput>}, TContext> => {
+
+const mutationKey = ['createConference'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConference>>, {data: BodyType<ConferenceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createConference(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateConferenceMutationResult = NonNullable<Awaited<ReturnType<typeof createConference>>>
+    export type CreateConferenceMutationBody = BodyType<ConferenceInput>
+    export type CreateConferenceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a conference (admin only)
+ */
+export const useCreateConference = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConference>>, TError,{data: BodyType<ConferenceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createConference>>,
+        TError,
+        {data: BodyType<ConferenceInput>},
+        TContext
+      > => {
+      return useMutation(getCreateConferenceMutationOptions(options));
+    }
+
+export const getUpdateConferenceUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/conferences/${id}`
+}
+
+/**
+ * @summary Update conference (admin) or send chat message (any member)
+ */
+export const updateConference = async (id: number,
+    conferenceUpdate: ConferenceUpdate, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUpdateConferenceUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      conferenceUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateConferenceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConference>>, TError,{id: number;data: BodyType<ConferenceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateConference>>, TError,{id: number;data: BodyType<ConferenceUpdate>}, TContext> => {
+
+const mutationKey = ['updateConference'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConference>>, {id: number;data: BodyType<ConferenceUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateConference(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateConferenceMutationResult = NonNullable<Awaited<ReturnType<typeof updateConference>>>
+    export type UpdateConferenceMutationBody = BodyType<ConferenceUpdate>
+    export type UpdateConferenceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update conference (admin) or send chat message (any member)
+ */
+export const useUpdateConference = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConference>>, TError,{id: number;data: BodyType<ConferenceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateConference>>,
+        TError,
+        {id: number;data: BodyType<ConferenceUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateConferenceMutationOptions(options));
+    }
+
+export const getDeleteConferenceUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/conferences/${id}`
+}
+
+/**
+ * @summary Delete conference (admin only)
+ */
+export const deleteConference = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteConferenceUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteConferenceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteConference>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteConference>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteConference'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteConference>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteConference(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteConferenceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteConference>>>
+
+    export type DeleteConferenceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete conference (admin only)
+ */
+export const useDeleteConference = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteConference>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteConference>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteConferenceMutationOptions(options));
     }
 

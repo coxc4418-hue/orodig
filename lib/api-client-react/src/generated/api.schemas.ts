@@ -466,6 +466,127 @@ export interface AdminPurchaseUpdate {
   notes?: string | null;
 }
 
+export interface MemberMini {
+  id: number;
+  username: string;
+  fullName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  rank?: string;
+}
+
+export interface Post {
+  id: number;
+  memberId: number;
+  author?: MemberMini;
+  content: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  likesCount: number;
+  commentsCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+}
+
+export interface PostInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  content: string;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export interface LikeResult {
+  liked: boolean;
+  likesCount: number;
+}
+
+export interface Comment {
+  id: number;
+  postId: number;
+  memberId: number;
+  author?: MemberMini;
+  content: string;
+  createdAt: string;
+}
+
+export interface CommentInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  content: string;
+}
+
+export interface SocialProfile {
+  id: number;
+  username: string;
+  fullName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  rank: string;
+  totalEarnings?: number;
+  directReferrals?: number;
+  followersCount: number;
+  followingCount: number;
+  postsCount: number;
+  isFollowing: boolean;
+}
+
+export interface FollowResult {
+  following: boolean;
+}
+
+export interface ChatMessage {
+  memberId: number;
+  username: string;
+  fullName: string;
+  content: string;
+  sentAt: string;
+}
+
+export interface Conference {
+  id: number;
+  title: string;
+  description: string;
+  streamUrl: string;
+  isLive: boolean;
+  /** @nullable */
+  scheduledAt?: string | null;
+  /** @nullable */
+  endedAt?: string | null;
+  chatMessages?: ChatMessage[];
+  createdAt: string;
+}
+
+export interface ConferenceInput {
+  title: string;
+  description?: string;
+  streamUrl?: string;
+  /** @nullable */
+  scheduledAt?: string | null;
+}
+
+export type ConferenceUpdateChatMessage = {
+  memberId?: number;
+  username?: string;
+  content?: string;
+};
+
+export interface ConferenceUpdate {
+  title?: string;
+  description?: string;
+  streamUrl?: string;
+  isLive?: boolean;
+  /** @nullable */
+  scheduledAt?: string | null;
+  /** @nullable */
+  endedAt?: string | null;
+  chatMessage?: ConferenceUpdateChatMessage;
+}
+
 export type AdminDeleteProduct200 = {
   success?: boolean;
 };

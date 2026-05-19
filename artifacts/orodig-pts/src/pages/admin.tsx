@@ -20,13 +20,17 @@ import {
   useAdminListPurchases,
   useAdminUpdatePurchase,
   getAdminListPurchasesQueryKey,
+  useListConferences,
+  useCreateConference,
+  useUpdateConference,
+  useDeleteConference,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListWithdrawalsQueryKey, getAdminListProductsQueryKey, getAdminListMembersQueryKey, getAdminGetStatsQueryKey } from "@workspace/api-client-react";
 import {
   Users, DollarSign, TrendingUp, ArrowDownToLine,
   ShoppingBag, CheckCircle, XCircle, Clock, ChevronRight,
-  Shield, Plus, Edit, ToggleLeft, ToggleRight, Trash2
+  Shield, Plus, Edit, ToggleLeft, ToggleRight, Trash2, Video, Calendar
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -45,7 +49,7 @@ const METODO_LABELS: Record<string, string> = {
 };
 
 const GOLD = "hsl(42,68%,50%)";
-const TABS = ["Estadísticas", "Depósitos", "Retiros", "Compras", "Productos", "Miembros"] as const;
+const TABS = ["Estadísticas", "Depósitos", "Retiros", "Compras", "Productos", "Miembros", "Conferencias"] as const;
 type Tab = typeof TABS[number];
 
 export default function Admin() {
@@ -53,6 +57,8 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("Estadísticas");
   const [processingPurchaseId, setProcessingPurchaseId] = useState<number | null>(null);
+  const [showAddConference, setShowAddConference] = useState(false);
+  const [newConference, setNewConference] = useState({ title: "", description: "", streamUrl: "", scheduledAt: "" });
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -60,6 +66,13 @@ export default function Admin() {
       setLocation("/dashboard");
     }
   }, [currentMember, setLocation]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "conferences") {
+      setActiveTab("Conferencias");
+    }
+  }, []);
 
   const { data: stats } = useAdminGetStats();
   const { data: withdrawals } = useAdminListWithdrawals();
@@ -109,6 +122,34 @@ export default function Admin() {
         qc.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() });
       },
     },
+  });
+
+  const { data: conferences } = useListConferences();
+
+  const createConf = useCreateConference({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+        setShowAddConference(false);
+        setNewConference({ title: "", description: "", streamUrl: "", scheduledAt: "" });
+      }
+    }
+  });
+
+  const updateConf = useUpdateConference({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+      }
+    }
+  });
+
+  const deleteConf = useDeleteConference({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+      }
+    }
   });
 
   const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", pointsReward: "", category: "pack" });
@@ -191,6 +232,35 @@ export default function Admin() {
     setNewProduct({ name: "", description: "", price: "", pointsReward: "", category: "pack" });
     setShowProductForm(false);
   };
+
+  const handleCreateConference = () => {
+    if (!newConference.title || !newConference.streamUrl) return;
+    createConf.mutate({
+      data: {
+        title: newConference.title,
+        description: newConference.description,
+        streamUrl: newConference.streamUrl,
+        scheduledAt: newConference.scheduledAt ? new Date(newConference.scheduledAt).toISOString() : null,
+      }
+    });
+  };
+
+  const handleToggleConferenceLive = (id: number, currentLive: boolean) => {
+    updateConf.mutate({
+      id,
+      data: {
+        isLive: !currentLive,
+        endedAt: currentLive ? new Date().toISOString() : null,
+      }
+    });
+  };
+
+  const handleDeleteConference = (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar esta conferencia?")) {
+      deleteConf.mutate({ id });
+    }
+  };
+
 
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; className: string }> = {
@@ -714,6 +784,141 @@ export default function Admin() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* CONFERENCIAS */}
+      {activeTab === "Conferencias" && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-black text-white">Transmisiones y Conferencias</h2>
+            <Button
+              onClick={() => setShowAddConference(!showAddConference)}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              {showAddConference ? "Cancelar" : "Programar Conferencia"}
+            </Button>
+          </div>
+
+          {showAddConference && (
+            <Card className="bg-card border-white/5">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold text-white uppercase">Nueva Conferencia</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Título</label>
+                    <input
+                      type="text"
+                      value={newConference.title}
+                      onChange={(e) => setNewConference({ ...newConference, title: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground"
+                      placeholder="Ej: Liderazgo y Crecimiento OroDig"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">URL del Stream (YouTube / Zoom)</label>
+                    <input
+                      type="text"
+                      value={newConference.streamUrl}
+                      onChange={(e) => setNewConference({ ...newConference, streamUrl: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground"
+                      placeholder="Ej: https://youtube.com/watch?v=..."
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Fecha y Hora Programada</label>
+                    <input
+                      type="datetime-local"
+                      value={newConference.scheduledAt}
+                      onChange={(e) => setNewConference({ ...newConference, scheduledAt: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground [color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Descripción</label>
+                    <textarea
+                      value={newConference.description}
+                      onChange={(e) => setNewConference({ ...newConference, description: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground h-10 resize-none"
+                      placeholder="Ej: En esta sesión explicaremos el plan de carrera..."
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    onClick={handleCreateConference}
+                    disabled={createConf.isPending || !newConference.title || !newConference.streamUrl}
+                    className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black text-xs uppercase"
+                  >
+                    Crear Conferencia
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="space-y-3">
+            {(conferences as any[] ?? []).map((conf) => {
+              const isLive = conf.isLive;
+              return (
+                <Card key={conf.id} className={`bg-card border-white/5 ${isLive ? "ring-2 ring-purple-600" : ""}`}>
+                  <CardContent className="p-4 flex items-center gap-3 flex-wrap justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-white font-bold text-sm">{conf.title}</span>
+                        {isLive ? (
+                          <Badge className="bg-red-600 text-white text-[9px] uppercase font-bold tracking-wider animate-pulse">En Vivo</Badge>
+                        ) : conf.endedAt ? (
+                          <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-wider border-white/10 text-muted-foreground">Finalizado</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-wider border-blue-500/30 text-blue-300 bg-blue-500/10">Programado</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{conf.description}</p>
+                      <div className="flex gap-2 text-[10px] text-muted-foreground mt-1 flex-wrap">
+                        {conf.scheduledAt && (
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(conf.scheduledAt).toLocaleString()}</span>
+                        )}
+                        <span className="truncate">Stream: {conf.streamUrl}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <Button
+                        size="sm"
+                        className={isLive ? "bg-red-600 hover:bg-red-700 text-white font-bold text-xs animate-pulse" : "bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"}
+                        onClick={() => handleToggleConferenceLive(conf.id, isLive)}
+                        disabled={updateConf.isPending}
+                      >
+                        {isLive ? "Detener Transmisión" : "Iniciar Transmisión"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-white/10 hover:bg-white/5 text-white text-xs"
+                        onClick={() => setLocation(`/conference/${conf.id}`)}
+                      >
+                        Entrar Sala
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="hover:bg-red-500/10 text-muted-foreground hover:text-red-400 text-xs"
+                        onClick={() => handleDeleteConference(conf.id)}
+                        disabled={deleteConf.isPending}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

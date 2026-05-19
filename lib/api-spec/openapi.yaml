@@ -645,6 +645,244 @@ paths:
               schema:
                 $ref: "#/components/schemas/Member"
 
+  # ─── COMMUNITY ──────────────────────────────────────────────────────────────
+
+  /community/feed:
+    get:
+      operationId: getCommunityFeed
+      tags: [community]
+      summary: Get social feed (all posts newest first)
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  /community/posts:
+    post:
+      operationId: createPost
+      tags: [community]
+      summary: Create a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /community/posts/{id}:
+    delete:
+      operationId: deletePost
+      tags: [community]
+      summary: Delete own post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /community/posts/{id}/like:
+    post:
+      operationId: togglePostLike
+      tags: [community]
+      summary: Toggle like on a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResult"
+
+  /community/posts/{id}/comments:
+    get:
+      operationId: getPostComments
+      tags: [community]
+      summary: Get comments for a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createComment
+      tags: [community]
+      summary: Add a comment to a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /community/posts/{postId}/comments/{id}:
+    delete:
+      operationId: deleteComment
+      tags: [community]
+      summary: Delete own comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /community/members/{id}/profile:
+    get:
+      operationId: getSocialProfile
+      tags: [community]
+      summary: Get social profile of a member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Social profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialProfile"
+
+  /community/follow/{id}:
+    post:
+      operationId: toggleFollow
+      tags: [community]
+      summary: Follow or unfollow a member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Follow toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResult"
+
+  /community/conferences:
+    get:
+      operationId: listConferences
+      tags: [community]
+      summary: List all conferences
+      responses:
+        "200":
+          description: List of conferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conference"
+    post:
+      operationId: createConference
+      tags: [community]
+      summary: Create a conference (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConferenceInput"
+      responses:
+        "201":
+          description: Conference created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conference"
+
+  /community/conferences/{id}:
+    patch:
+      operationId: updateConference
+      tags: [community]
+      summary: Update conference (admin) or send chat message (any member)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConferenceUpdate"
+      responses:
+        "200":
+          description: Updated
+    delete:
+      operationId: deleteConference
+      tags: [community]
+      summary: Delete conference (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -1199,3 +1437,209 @@ components:
           enum: [approved, rejected]
         notes:
           type: ["string", "null"]
+
+    # ─── COMMUNITY SCHEMAS ────────────────────────────────────────────────────
+
+    MemberMini:
+      type: object
+      required: [id, username, fullName]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        rank:
+          type: string
+
+    Post:
+      type: object
+      required: [id, memberId, content, likesCount, commentsCount, likedByMe, createdAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        author:
+          $ref: "#/components/schemas/MemberMini"
+        content:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        likesCount:
+          type: integer
+        commentsCount:
+          type: integer
+        likedByMe:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PostInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        imageUrl:
+          type: ["string", "null"]
+
+    LikeResult:
+      type: object
+      required: [liked, likesCount]
+      properties:
+        liked:
+          type: boolean
+        likesCount:
+          type: integer
+
+    Comment:
+      type: object
+      required: [id, postId, memberId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        memberId:
+          type: integer
+        author:
+          $ref: "#/components/schemas/MemberMini"
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 1000
+
+    SocialProfile:
+      type: object
+      required: [id, username, fullName, rank, followersCount, followingCount, postsCount, isFollowing]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        rank:
+          type: string
+        totalEarnings:
+          type: number
+        directReferrals:
+          type: integer
+        followersCount:
+          type: integer
+        followingCount:
+          type: integer
+        postsCount:
+          type: integer
+        isFollowing:
+          type: boolean
+
+    FollowResult:
+      type: object
+      required: [following]
+      properties:
+        following:
+          type: boolean
+
+    ChatMessage:
+      type: object
+      required: [memberId, username, fullName, content, sentAt]
+      properties:
+        memberId:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        content:
+          type: string
+        sentAt:
+          type: string
+
+    Conference:
+      type: object
+      required: [id, title, description, streamUrl, isLive, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        streamUrl:
+          type: string
+        isLive:
+          type: boolean
+        scheduledAt:
+          type: ["string", "null"]
+          format: date-time
+        endedAt:
+          type: ["string", "null"]
+          format: date-time
+        chatMessages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        createdAt:
+          type: string
+          format: date-time
+
+    ConferenceInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        streamUrl:
+          type: string
+        scheduledAt:
+          type: ["string", "null"]
+          format: date-time
+
+    ConferenceUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        streamUrl:
+          type: string
+        isLive:
+          type: boolean
+        scheduledAt:
+          type: ["string", "null"]
+          format: date-time
+        endedAt:
+          type: ["string", "null"]
+          format: date-time
+        chatMessage:
+          type: object
+          properties:
+            memberId:
+              type: integer
+            username:
+              type: string
+            content:
+              type: string

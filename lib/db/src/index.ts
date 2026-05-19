@@ -87,6 +87,22 @@ const COLUMN_MAP: Record<string, string> = {
   source_member_id: "sourceMemberId",
   account_details: "accountDetails",
   reference_number: "referenceNumber",
+  // posts
+  liked_by: "likedBy",
+  likes_count: "likesCount",
+  comments_count: "commentsCount",
+  image_url: "imageUrl",
+  // post_comments
+  post_id: "postId",
+  // follows
+  follower_id: "followerId",
+  following_id: "followingId",
+  // conferences
+  stream_url: "streamUrl",
+  is_live: "isLive",
+  scheduled_at: "scheduledAt",
+  ended_at: "endedAt",
+  chat_messages: "chatMessages",
 };
 
 function translateFieldName(name: string): string {

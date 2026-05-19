@@ -11,6 +11,7 @@ import depositsRouter from "./deposits";
 import networkRouter from "./network";
 import adminRouter from "./admin";
 import referralsRouter from "./referrals";
+import communityRouter from "./community";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(depositsRouter);
 router.use(networkRouter);
 router.use(adminRouter);
 router.use(referralsRouter);
+router.use(communityRouter);
 
 export default router;

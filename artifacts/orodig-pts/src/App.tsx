@@ -20,6 +20,8 @@ import Admin from "@/pages/admin";
 import Premios from "@/pages/premios";
 import Plan from "@/pages/plan";
 import Rangos from "@/pages/rangos";
+import Community from "@/pages/community";
+import ConferenceRoom from "@/pages/conference-room";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +38,8 @@ function ProtectedRoutes() {
       <AppLayout>
         <Switch>
           <Route path="/dashboard"  component={Dashboard} />
+          <Route path="/community"  component={Community} />
+          <Route path="/conference/:id" component={ConferenceRoom} />
           <Route path="/network"    component={Network} />
           <Route path="/earnings"   component={Earnings} />
           <Route path="/leaderboard" component={Leaderboard} />
