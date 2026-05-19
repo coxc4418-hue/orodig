@@ -59,8 +59,16 @@ const PRIZES = [
 ];
 
 const QUINCENAL_WINNERS = [
-  { week: "Semana 1", name: "Carlos Mendoza", amount: 250 },
-  { week: "Semana 2", name: "María García", amount: 250 },
+  { week: "Semana 1", name: "José Ruiz", amount: 250 },
+  { week: "Semana 1", name: "María Mejía", amount: 250 },
+  { week: "Semana 1", name: "Alexander López", amount: 250 },
+  { week: "Semana 1", name: "Carlos Martínez", amount: 250 },
+  { week: "Semana 1", name: "Miguel Cázares", amount: 250 },
+  { week: "Semana 2", name: "Juan Rojas", amount: 250 },
+  { week: "Semana 2", name: "Milena Vargas", amount: 250 },
+  { week: "Semana 2", name: "Alexandra Sterling", amount: 250 },
+  { week: "Semana 2", name: "Víctor Casanova", amount: 250 },
+  { week: "Semana 2", name: "Daniel Robledo", amount: 250 },
 ];
 
 export default function Premios() {

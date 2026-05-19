@@ -25,6 +25,9 @@ const METODO_LABELS: Record<string, string> = {
   crypto_usdt:    "USDT (TRC20)",
   crypto_btc:     "Bitcoin (BTC)",
   bank_transfer:  "Transferencia Bancaria",
+  vault_gems:     "Bóveda (Piedras Preciosas)",
+  vault_goods:    "Bóveda (Artículos / Productos)",
+  vault_cash:     "Bóveda (Consignación en Efectivo)",
 };
 
 export default function Withdrawals() {
@@ -149,6 +152,9 @@ export default function Withdrawals() {
                       <SelectItem value="crypto_usdt">USDT (TRC20)</SelectItem>
                       <SelectItem value="crypto_btc">Bitcoin (BTC)</SelectItem>
                       <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
+                      <SelectItem value="vault_gems">Bóveda (Piedras Preciosas)</SelectItem>
+                      <SelectItem value="vault_goods">Bóveda (Artículos / Productos)</SelectItem>
+                      <SelectItem value="vault_cash">Bóveda (Consignación en Efectivo)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -156,7 +162,10 @@ export default function Withdrawals() {
                 <div className="space-y-1.5">
                   <Label className="text-sm font-semibold text-white/80">Dirección / Cuenta destino</Label>
                   <Input
-                    placeholder={method === "bank_transfer" ? "Número de cuenta / CLABE" : "T..."}
+                    placeholder={
+                      method === "bank_transfer" ? "Número de cuenta / CLABE" : 
+                      method.startsWith("vault_") ? "Detalles del retiro o dirección física para envío" : "Dirección de billetera (T...)"
+                    }
                     value={account}
                     onChange={(e) => setAccount(e.target.value)}
                     className="bg-white/5 border-white/10 text-white font-mono text-sm focus-visible:border-[hsl(42,68%,50%)] focus-visible:ring-0"

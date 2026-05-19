@@ -7,6 +7,7 @@ import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { LoginBody, RegisterBody, GetMeResponse } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 import { addEarning, checkAndUpgradeRank } from "../lib/rankHelper";
+import { checkAndBypassInactiveSponsors } from "../lib/bypassHelper";
 import { z } from "zod";
 
 const router: IRouter = Router();
@@ -39,13 +40,17 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
   };
 }
 
-router.post("/auth/login", async (req, res): Promise<void> => {
+router.post("/auth/login", async (req: any, res: any): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
   const { username, password } = parsed.data;
+
+  // Re-build any inactive sponsor branches before fetching the member
+  await checkAndBypassInactiveSponsors();
+
   const [member] = await db.select().from(membersTable).where(eq(membersTable.username, username));
   if (!member) {
     res.status(401).json({ error: "Credenciales inválidas" });
@@ -60,7 +65,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   res.json({ member: formatMember(member), token });
 });
 
-router.post("/auth/register", async (req, res): Promise<void> => {
+router.post("/auth/register", async (req: any, res: any): Promise<void> => {
   const parsed = RegisterBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -135,7 +140,10 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   res.status(201).json({ member: formatMember(member, sponsor?.fullName ?? null), token });
 });
 
-router.get("/auth/me", requireAuth, async (req: AuthRequest, res): Promise<void> => {
+router.get("/auth/me", requireAuth, async (req: any, res: any): Promise<void> => {
+  // Re-build inactive sponsor branches so the UI is up-to-date
+  await checkAndBypassInactiveSponsors();
+
   const [member] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
   if (!member) {
     res.status(401).json({ error: "Unauthorized" });
@@ -157,7 +165,7 @@ const UpdateProfileBody = z.object({
   newPassword: z.string().min(6).optional(),
 });
 
-router.put("/auth/profile", requireAuth, async (req: AuthRequest, res): Promise<void> => {
+router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<void> => {
   const parsed = UpdateProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -204,7 +212,7 @@ router.put("/auth/profile", requireAuth, async (req: AuthRequest, res): Promise<
   res.json(formatMember(updated, sponsorName));
 });
 
-router.post("/auth/logout", (_req, res): void => {
+router.post("/auth/logout", (_req: any, res: any): void => {
   res.json({ success: true });
 });
 

@@ -1,5 +1,5 @@
-import { db, membersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, membersTable, purchasesTable, productsTable } from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
 import { earningsTable } from "@workspace/db";
 
 export const RANK_LIST = [
@@ -41,32 +41,104 @@ export const RANK_BONUS: Record<string, number> = {
   "Accionista ORODIG": 200,
 };
 
-// Rank thresholds based on total earnings
-const RANK_THRESHOLDS = [
-  { rank: "Bronce",             next: "Cobre",             threshold: 50 },
-  { rank: "Cobre",              next: "Crisolito",          threshold: 150 },
-  { rank: "Crisolito",          next: "Belirio Rojo",       threshold: 350 },
-  { rank: "Belirio Rojo",       next: "Tanzanita Verde",    threshold: 700 },
-  { rank: "Tanzanita Verde",    next: "Plata",              threshold: 1200 },
-  { rank: "Plata",              next: "Oro",                threshold: 2500 },
-  { rank: "Oro",                next: "Esmeralda Azul",     threshold: 5000 },
-  { rank: "Esmeralda Azul",     next: "Esmeralda Verde",    threshold: 9000 },
-  { rank: "Esmeralda Verde",    next: "Diamante Azul",      threshold: 15000 },
-  { rank: "Diamante Azul",      next: "Danzanita Verde",    threshold: 23000 },
-  { rank: "Danzanita Verde",    next: "Diamante Fantasía",  threshold: 33000 },
-  { rank: "Diamante Fantasía",  next: "Zafiro Amarillo",    threshold: 48000 },
-  { rank: "Zafiro Amarillo",    next: "Alejandrita Especial", threshold: 70000 },
-  { rank: "Alejandrita Especial", next: "Accionista ORODIG", threshold: 100000 },
-];
+const PRODUCT_WEIGHTS: Record<string, number> = {
+  "Suscripción": 1,
+  "Pequeño Aprendiz": 2,
+  "Mediano Liderazgo": 3,
+  "Gran Líder": 4,
+  "Director de Líderes": 5,
+  "Director de Directores": 6,
+  "Director de Zonas": 7,
+  "Director de Países": 8,
+};
 
 export async function checkAndUpgradeRank(memberId: number): Promise<string | null> {
   const [member] = await db.select().from(membersTable).where(eq(membersTable.id, memberId));
   if (!member) return null;
-  const entry = RANK_THRESHOLDS.find((r) => r.rank === member.rank);
-  if (entry && parseFloat(member.totalEarnings) >= entry.threshold) {
-    await db.update(membersTable).set({ rank: entry.next }).where(eq(membersTable.id, memberId));
-    return entry.next;
+
+  // Find all direct referrals
+  const referrals = await db.select().from(membersTable).where(eq(membersTable.sponsorId, memberId));
+  if (referrals.length === 0) return null;
+
+  const referralIds = referrals.map((r: any) => r.id);
+
+  // Find all purchases made by direct referrals
+  const purchases = await db.select().from(purchasesTable).where(inArray(purchasesTable.memberId, referralIds));
+  const products = (await db.select().from(productsTable)) as any[];
+  const productMap = new Map(products.map((p: any) => [p.id, p]));
+
+  const referralHighestPackageWeight = new Map<number, number>();
+  for (const referral of referrals) {
+    referralHighestPackageWeight.set(referral.id, 0);
   }
+
+  for (const purchase of purchases) {
+    const prod = productMap.get(purchase.productId);
+    if (prod) {
+      const weight = PRODUCT_WEIGHTS[prod.name] ?? 0;
+      const currentMax = referralHighestPackageWeight.get(purchase.memberId) ?? 0;
+      if (weight > currentMax) {
+        referralHighestPackageWeight.set(purchase.memberId, weight);
+      }
+    }
+  }
+
+  const counts = {
+    subscriptionOrHigher: 0,
+    pequenoOrHigher: 0,
+    medianoOrHigher: 0,
+    granOrHigher: 0,
+    dirLideresOrHigher: 0,
+    dirDirectoresOrHigher: 0,
+    dirZonasOrHigher: 0,
+    dirPaisesOrHigher: 0,
+  };
+
+  for (const [_, weight] of referralHighestPackageWeight.entries()) {
+    if (weight >= 1) counts.subscriptionOrHigher++;
+    if (weight >= 2) counts.pequenoOrHigher++;
+    if (weight >= 3) counts.medianoOrHigher++;
+    if (weight >= 4) counts.granOrHigher++;
+    if (weight >= 5) counts.dirLideresOrHigher++;
+    if (weight >= 6) counts.dirDirectoresOrHigher++;
+    if (weight >= 7) counts.dirZonasOrHigher++;
+    if (weight >= 8) counts.dirPaisesOrHigher++;
+  }
+
+  const ranksHierarchy = [
+    { rank: "Accionista ORODIG", check: () => counts.subscriptionOrHigher >= 1 && counts.pequenoOrHigher >= 1 && counts.medianoOrHigher >= 1 && counts.granOrHigher >= 1 && counts.dirLideresOrHigher >= 1 && counts.dirDirectoresOrHigher >= 1 && counts.dirZonasOrHigher >= 1 && counts.dirPaisesOrHigher >= 1 },
+    { rank: "Alejandrita Especial", check: () => counts.dirPaisesOrHigher >= 1 },
+    { rank: "Zafiro Amarillo", check: () => counts.dirZonasOrHigher >= 1 },
+    { rank: "Diamante Fantasía", check: () => counts.dirDirectoresOrHigher >= 1 },
+    { rank: "Danzanita Verde", check: () => counts.dirLideresOrHigher >= 2 },
+    { rank: "Diamante Azul", check: () => counts.dirLideresOrHigher >= 1 },
+    { rank: "Esmeralda Verde", check: () => counts.granOrHigher >= 1 },
+    { rank: "Esmeralda Azul", check: () => counts.medianoOrHigher >= 1 },
+    { rank: "Oro", check: () => counts.pequenoOrHigher >= 10 },
+    { rank: "Plata", check: () => counts.pequenoOrHigher >= 5 },
+    { rank: "Tanzanita Verde", check: () => counts.subscriptionOrHigher >= 10 },
+    { rank: "Belirio Rojo", check: () => counts.subscriptionOrHigher >= 8 },
+    { rank: "Crisolito", check: () => counts.subscriptionOrHigher >= 4 },
+    { rank: "Cobre", check: () => counts.subscriptionOrHigher >= 2 },
+    { rank: "Bronce", check: () => counts.subscriptionOrHigher >= 1 },
+  ];
+
+  let qualifiedRank: string = "Bronce";
+  for (const entry of ranksHierarchy) {
+    if (entry.check()) {
+      qualifiedRank = entry.rank;
+      break;
+    }
+  }
+
+  const currentIdx = RANK_LIST.indexOf(member.rank as any);
+  const qualifiedIdx = RANK_LIST.indexOf(qualifiedRank as any);
+
+  if (qualifiedIdx > currentIdx) {
+    await db.update(membersTable).set({ rank: qualifiedRank }).where(eq(membersTable.id, memberId));
+    return qualifiedRank;
+  }
+
   return null;
 }
 
