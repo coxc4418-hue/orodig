@@ -52,6 +52,7 @@ export default function Admin() {
   const { currentMember } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("Estadísticas");
+  const [processingPurchaseId, setProcessingPurchaseId] = useState<number | null>(null);
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -85,7 +86,11 @@ export default function Admin() {
         qc.invalidateQueries({ queryKey: getAdminListPurchasesQueryKey() });
         qc.invalidateQueries({ queryKey: getAdminListMembersQueryKey() });
         qc.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() });
-      } 
+        setProcessingPurchaseId(null);
+      },
+      onError: () => {
+        setProcessingPurchaseId(null);
+      },
     },
   });
   const createProduct = useAdminCreateProduct({
@@ -122,6 +127,10 @@ export default function Admin() {
   };
 
   const handleApprovePurchase = (id: number, status: "approved" | "rejected") => {
+    if (processingPurchaseId !== null) return; // guard against double-click
+    const action = status === "approved" ? "aprobar" : "rechazar";
+    if (!confirm(`¿Seguro que deseas ${action} esta compra? Esta acción no se puede deshacer.`)) return;
+    setProcessingPurchaseId(id);
     updatePurchase.mutate({ id, data: { status } });
   };
 
@@ -415,16 +424,20 @@ export default function Admin() {
                           size="sm"
                           className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
                           onClick={() => handleApprovePurchase(p.id, "approved")}
-                          disabled={updatePurchase.isPending}
+                          disabled={processingPurchaseId !== null}
                         >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> Aprobar
+                          {processingPurchaseId === p.id ? (
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />Procesando...</span>
+                          ) : (
+                            <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Aprobar</>
+                          )}
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-xs font-bold"
                           onClick={() => handleApprovePurchase(p.id, "rejected")}
-                          disabled={updatePurchase.isPending}
+                          disabled={processingPurchaseId !== null}
                         >
                           <XCircle className="w-3.5 h-3.5 mr-1" /> Rechazar
                         </Button>

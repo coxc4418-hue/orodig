@@ -203,6 +203,16 @@ router.patch("/admin/purchases/:id", requireAuth, requireAdmin, async (req: Auth
   const pointsEarned = safeFloat(purchase.pointsEarned);
 
   if (parsed.data.status === "approved") {
+    // Guard: check if member already has an active (non-expired) plan
+    if (
+      member.referralStatus === "VERDE" &&
+      member.expiresAt &&
+      new Date(member.expiresAt).getTime() > Date.now()
+    ) {
+      // Allow renewal: member has active plan → extend it (don't block)
+      // This is OK — they can stack time on top of an active plan
+    }
+
     // 1. Activar beneficios
     const cashback = totalPrice * 0.10;
     const now = new Date();

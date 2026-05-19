@@ -36,12 +36,25 @@ function getRankProgress(rank: string, totalEarnings: number) {
 }
 
 function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string | null; referralStatus: string }) {
-  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number; expired: boolean }>({
-    d: 0, h: 0, m: 0, s: 0, expired: true
-  });
+  const computeTimeLeft = () => {
+    if (!expiresAt || referralStatus === "ROJO" || referralStatus === "SUSPENDIDO") {
+      return { d: 0, h: 0, m: 0, s: 0, expired: true };
+    }
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0, expired: true };
+    return {
+      d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      m: Math.floor((diff / 1000 / 60) % 60),
+      s: Math.floor((diff / 1000) % 60),
+      expired: false,
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(computeTimeLeft);
 
   useEffect(() => {
-    if (!expiresAt || referralStatus === "ROJO") {
+    if (!expiresAt || referralStatus === "ROJO" || referralStatus === "SUSPENDIDO") {
       setTimeLeft({ d: 0, h: 0, m: 0, s: 0, expired: true });
       return;
     }
