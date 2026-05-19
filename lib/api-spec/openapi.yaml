@@ -590,7 +590,7 @@ components:
           type: string
         rank:
           type: string
-          enum: [Bronce, Plata, Oro, Platino, Diamante, Embajador]
+          enum: [Bronce, Cobre, Crisolito, "Belirio Rojo", "Tanzanita Verde", Plata, Oro, "Esmeralda Azul", "Esmeralda Verde", "Diamante Azul", "Danzanita Verde", "Diamante Fantasía", "Zafiro Amarillo", "Alejandrita Especial", "Accionista ORODIG"]
         balance:
           type: number
         points:
@@ -609,6 +609,9 @@ components:
           type: ["string", "null"]
         avatarUrl:
           type: ["string", "null"]
+        lastPaymentAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -903,7 +906,7 @@ components:
       properties:
         rank:
           type: string
-          enum: [Bronce, Plata, Oro, Platino, Diamante, Embajador]
+          enum: [Bronce, Cobre, Crisolito, "Belirio Rojo", "Tanzanita Verde", Plata, Oro, "Esmeralda Azul", "Esmeralda Verde", "Diamante Azul", "Danzanita Verde", "Diamante Fantasía", "Zafiro Amarillo", "Alejandrita Especial", "Accionista ORODIG"]
         isActive:
           type: boolean
         balance:

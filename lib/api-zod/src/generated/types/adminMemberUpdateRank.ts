@@ -11,9 +11,18 @@ export type AdminMemberUpdateRank = typeof AdminMemberUpdateRank[keyof typeof Ad
 
 export const AdminMemberUpdateRank = {
   Bronce: 'Bronce',
+  Cobre: 'Cobre',
+  Crisolito: 'Crisolito',
+  Belirio_Rojo: 'Belirio Rojo',
+  Tanzanita_Verde: 'Tanzanita Verde',
   Plata: 'Plata',
   Oro: 'Oro',
-  Platino: 'Platino',
-  Diamante: 'Diamante',
-  Embajador: 'Embajador',
+  Esmeralda_Azul: 'Esmeralda Azul',
+  Esmeralda_Verde: 'Esmeralda Verde',
+  Diamante_Azul: 'Diamante Azul',
+  Danzanita_Verde: 'Danzanita Verde',
+  Diamante_Fantasía: 'Diamante Fantasía',
+  Zafiro_Amarillo: 'Zafiro Amarillo',
+  Alejandrita_Especial: 'Alejandrita Especial',
+  Accionista_ORODIG: 'Accionista ORODIG',
 } as const;

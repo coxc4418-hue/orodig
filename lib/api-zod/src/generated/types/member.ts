@@ -28,5 +28,7 @@ export interface Member {
   sponsorName?: string | null;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  lastPaymentAt?: Date | null;
   createdAt: Date;
 }

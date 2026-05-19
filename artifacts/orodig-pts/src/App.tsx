@@ -17,6 +17,9 @@ import Products from "@/pages/products";
 import Withdrawals from "@/pages/withdrawals";
 import Profile from "@/pages/profile";
 import Admin from "@/pages/admin";
+import Premios from "@/pages/premios";
+import Plan from "@/pages/plan";
+import Rangos from "@/pages/rangos";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,14 +35,17 @@ function ProtectedRoutes() {
     <ProtectedRoute>
       <AppLayout>
         <Switch>
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/network" component={Network} />
-          <Route path="/earnings" component={Earnings} />
+          <Route path="/dashboard"  component={Dashboard} />
+          <Route path="/network"    component={Network} />
+          <Route path="/earnings"   component={Earnings} />
           <Route path="/leaderboard" component={Leaderboard} />
-          <Route path="/products" component={Products} />
+          <Route path="/products"   component={Products} />
           <Route path="/withdrawals" component={Withdrawals} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/admin" component={Admin} />
+          <Route path="/profile"    component={Profile} />
+          <Route path="/admin"      component={Admin} />
+          <Route path="/premios"    component={Premios} />
+          <Route path="/plan"       component={Plan} />
+          <Route path="/rangos"     component={Rangos} />
           <Route component={NotFound} />
         </Switch>
       </AppLayout>
@@ -50,10 +56,10 @@ function ProtectedRoutes() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Login} />
+      <Route path="/"         component={Login} />
       <Route path="/register" component={Register} />
-      <Route path="/splash" component={Splash} />
-      <Route path="/:rest*" component={ProtectedRoutes} />
+      <Route path="/splash"   component={Splash} />
+      <Route path="/:rest*"   component={ProtectedRoutes} />
     </Switch>
   );
 }

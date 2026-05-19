@@ -32,7 +32,7 @@ export const LoginResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -42,6 +42,7 @@ export const LoginResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 }),
   "token": zod.string()
@@ -77,7 +78,7 @@ export const GetMeResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -87,6 +88,7 @@ export const GetMeResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 
@@ -113,7 +115,7 @@ export const UpdateProfileResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -123,6 +125,7 @@ export const UpdateProfileResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 
@@ -175,7 +178,7 @@ export const ListMembersResponseItem = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -185,6 +188,7 @@ export const ListMembersResponseItem = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListMembersResponse = zod.array(ListMembersResponseItem)
@@ -204,7 +208,7 @@ export const GetMemberResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -214,6 +218,7 @@ export const GetMemberResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 
@@ -511,7 +516,7 @@ export const AdminListMembersResponseItem = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -521,6 +526,7 @@ export const AdminListMembersResponseItem = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const AdminListMembersResponse = zod.array(AdminListMembersResponseItem)
@@ -534,7 +540,7 @@ export const AdminUpdateMemberParams = zod.object({
 })
 
 export const AdminUpdateMemberBody = zod.object({
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']).optional(),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']).optional(),
   "isActive": zod.boolean().optional(),
   "balance": zod.number().optional()
 })
@@ -546,7 +552,7 @@ export const AdminUpdateMemberResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "referralCode": zod.string(),
-  "rank": zod.enum(['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Embajador']),
+  "rank": zod.enum(['Bronce', 'Cobre', 'Crisolito', 'Belirio Rojo', 'Tanzanita Verde', 'Plata', 'Oro', 'Esmeralda Azul', 'Esmeralda Verde', 'Diamante Azul', 'Danzanita Verde', 'Diamante Fantasía', 'Zafiro Amarillo', 'Alejandrita Especial', 'Accionista ORODIG']),
   "balance": zod.number(),
   "points": zod.number(),
   "totalEarnings": zod.number(),
@@ -556,6 +562,7 @@ export const AdminUpdateMemberResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "lastPaymentAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 

@@ -34,6 +34,7 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
     sponsorId: m.sponsorId,
     sponsorName: sponsorName ?? null,
     avatarUrl: m.avatarUrl,
+    lastPaymentAt: m.lastPaymentAt ? m.lastPaymentAt.toISOString() : null,
     createdAt: m.createdAt.toISOString(),
   };
 }

@@ -3,7 +3,8 @@ import { useLocation, Link } from "wouter";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, History, Trophy, ShoppingBag,
-  ArrowDownToLine, User, Menu, X, LogOut, ChevronRight, Shield
+  ArrowDownToLine, User, Menu, X, LogOut, ChevronRight, Shield,
+  Gift, Layers, Diamond
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -33,21 +34,23 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Panel Principal", short: "Panel" },
-  { href: "/network",   icon: Users,           label: "Mi Red",          short: "Red" },
-  { href: "/earnings",  icon: History,         label: "Ganancias",       short: "Ganancias" },
-  { href: "/leaderboard",icon: Trophy,         label: "Clasificación",   short: "Top" },
-  { href: "/products",  icon: ShoppingBag,     label: "Productos",       short: "Tienda" },
-  { href: "/withdrawals",icon: ArrowDownToLine,label: "Retiros",         short: "Retiros" },
-  { href: "/profile",   icon: User,            label: "Mi Perfil",       short: "Perfil" },
+  { href: "/dashboard",  icon: LayoutDashboard, label: "Panel Principal", short: "Panel" },
+  { href: "/network",    icon: Users,           label: "Mi Red",          short: "Red" },
+  { href: "/earnings",   icon: History,         label: "Ganancias",       short: "Ganancias" },
+  { href: "/leaderboard",icon: Trophy,          label: "Clasificación",   short: "Top" },
+  { href: "/products",   icon: ShoppingBag,     label: "Productos",       short: "Tienda" },
+  { href: "/withdrawals",icon: ArrowDownToLine, label: "Retiros",         short: "Retiros" },
+  { href: "/rangos",     icon: Diamond,         label: "Rangos Mineros",  short: "Rangos" },
+  { href: "/premios",    icon: Gift,            label: "Premios & Metas", short: "Premios" },
+  { href: "/plan",       icon: Layers,          label: "Plan de Compensación", short: "Plan" },
+  { href: "/profile",    icon: User,            label: "Mi Perfil",       short: "Perfil" },
 ];
 
-// Only main 5 in the mobile bottom bar
 const BOTTOM_NAV = [
   { href: "/dashboard",  icon: LayoutDashboard, label: "Panel" },
   { href: "/network",    icon: Users,           label: "Red" },
-  { href: "/earnings",   icon: History,         label: "Ganancias" },
   { href: "/products",   icon: ShoppingBag,     label: "Tienda" },
+  { href: "/premios",    icon: Gift,            label: "Premios" },
   { href: "/profile",    icon: User,            label: "Perfil" },
 ];
 
@@ -63,6 +66,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = isAdmin
     ? [...NAV_ITEMS, { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" }]
     : NAV_ITEMS;
+
+  // Membership status from lastPaymentAt
+  const membershipStatus = getMembershipStatusClient(currentMember.lastPaymentAt ?? null);
 
   const SidebarInner = () => (
     <>
@@ -85,8 +91,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Saldo disponible</div>
         <div className="text-xl font-black" style={{ color: GOLD }}>${Number(currentMember.balance).toFixed(2)}</div>
         <div className="flex items-center gap-1.5 mt-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-          <span className="text-[10px] text-muted-foreground">Cuenta activa</span>
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: membershipStatus.dotColor }} />
+          <span className="text-[10px] text-muted-foreground">{membershipStatus.label}</span>
         </div>
       </div>
 
@@ -192,7 +198,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="pointer-events-none fixed inset-0 z-[-1]"
           style={{ background: "radial-gradient(circle at top right, hsl(42 68% 50% / 0.03), transparent 40%), radial-gradient(circle at bottom left, hsl(273 100% 50% / 0.03), transparent 40%)" }}
         />
-        {/* Top bar spacer on mobile, content padding */}
         <div className="pt-14 md:pt-0 pb-20 md:pb-0 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
           {children}
         </div>
@@ -227,27 +232,41 @@ function useLogoutAction(logout: () => void) {
   return { logoutMutation };
 }
 
+// Client-side membership status calculation
+function getMembershipStatusClient(lastPaymentAt: string | null): { label: string; dotColor: string } {
+  if (!lastPaymentAt) return { label: "Sin registro", dotColor: "#6b7280" };
+  const now = new Date();
+  const paymentDate = new Date(lastPaymentAt);
+  const daysSince = Math.floor((now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (daysSince <= 30) return { label: "Activo (Verde)", dotColor: "#22c55e" };
+  if (daysSince <= 60) return { label: "Activo Pendiente (Amarillo)", dotColor: "#eab308" };
+  if (daysSince < 180) return { label: "Inactivo (Rojo)", dotColor: "#ef4444" };
+  return { label: "Eliminado (Gris)", dotColor: "#6b7280" };
+}
+
+const RANK_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  "Bronce":              { bg: "#cd7f3215", text: "#cd7f32", border: "#cd7f3240" },
+  "Cobre":               { bg: "#b8733315", text: "#b87333", border: "#b8733340" },
+  "Crisolito":           { bg: "#a8c09015", text: "#8bab72", border: "#a8c09040" },
+  "Belirio Rojo":        { bg: "#dc262615", text: "#f87171", border: "#dc262640" },
+  "Tanzanita Verde":     { bg: "#14b8a615", text: "#2dd4bf", border: "#14b8a640" },
+  "Plata":               { bg: "#94a3b815", text: "#cbd5e1", border: "#94a3b840" },
+  "Oro":                 { bg: "hsl(42 68% 50% / 0.12)", text: "hsl(42,68%,55%)", border: "hsl(42 68% 50% / 0.35)" },
+  "Esmeralda Azul":      { bg: "#60a5fa15", text: "#93c5fd", border: "#60a5fa40" },
+  "Esmeralda Verde":     { bg: "#34d39915", text: "#6ee7b7", border: "#34d39940" },
+  "Diamante Azul":       { bg: "#38bdf815", text: "#7dd3fc", border: "#38bdf840" },
+  "Danzanita Verde":     { bg: "#4ade8015", text: "#86efac", border: "#4ade8040" },
+  "Diamante Fantasía":   { bg: "#a78bfa15", text: "#c4b5fd", border: "#a78bfa40" },
+  "Zafiro Amarillo":     { bg: "#fbbf2415", text: "#fcd34d", border: "#fbbf2440" },
+  "Alejandrita Especial":{ bg: "#c084fc15", text: "#d8b4fe", border: "#c084fc40" },
+  "Accionista ORODIG":   { bg: "hsl(42 68% 50% / 0.18)", text: "hsl(42,68%,62%)", border: "hsl(42 68% 50% / 0.5)" },
+};
+
 export function RankBadge({ rank }: { rank: string }) {
-  const styles: Record<string, string> = {
-    Bronce:    "bg-amber-700/20 text-amber-600 border-amber-700/40",
-    Plata:     "bg-slate-400/20 text-slate-300 border-slate-400/40",
-    Oro:       "border",
-    Platino:   "bg-cyan-200/20 text-cyan-200 border-cyan-200/40",
-    Diamante:  "bg-cyan-400/20 text-cyan-400 border-cyan-400/40",
-    Embajador: "bg-purple-600/20 text-purple-400 border-purple-600/40",
-  };
-
-  if (rank === "Oro") {
-    return (
-      <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0"
-        style={{ background: "hsl(42 68% 50% / 0.15)", color: GOLD, borderColor: "hsl(42 68% 50% / 0.4)" }}>
-        {rank}
-      </Badge>
-    );
-  }
-
+  const style = RANK_STYLES[rank] ?? { bg: "#6b728015", text: "#9ca3af", border: "#6b728040" };
   return (
-    <Badge variant="outline" className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0 border ${styles[rank] ?? "bg-gray-500/20 text-gray-400 border-gray-500/40"}`}>
+    <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0 border truncate max-w-[120px]"
+      style={{ background: style.bg, color: style.text, borderColor: style.border }}>
       {rank}
     </Badge>
   );

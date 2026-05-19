@@ -17,9 +17,9 @@ const loginSchema = z.object({
 });
 
 const DEMO_USERS = [
-  { label: "Admin", username: "admin", password: "admin123", rank: "Embajador" },
+  { label: "Admin", username: "admin", password: "admin123", rank: "Accionista ORODIG" },
   { label: "Oro", username: "carlos_mx", password: "demo123", rank: "Oro" },
-  { label: "Diamante", username: "maria_garcia", password: "demo123", rank: "Diamante" },
+  { label: "Diamante Azul", username: "maria_garcia", password: "demo123", rank: "Diamante Azul" },
 ];
 
 export default function Login() {

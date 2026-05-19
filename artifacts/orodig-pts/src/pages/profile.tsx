@@ -12,13 +12,21 @@ import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const GOLD = "hsl(42,68%,50%)";
-const RANKS = ["Bronce", "Plata", "Oro", "Platino", "Diamante", "Embajador"];
-const RANK_NEXT: Record<string, string | null> = {
-  Bronce: "Plata", Plata: "Oro", Oro: "Platino", Platino: "Diamante", Diamante: "Embajador", Embajador: null,
-};
-const RANK_THRESHOLDS: Record<string, number> = {
-  Bronce: 500, Plata: 2000, Oro: 5000, Platino: 15000, Diamante: 45000, Embajador: Infinity,
-};
+const RANK_LIST = [
+  "Bronce", "Cobre", "Crisolito", "Belirio Rojo", "Tanzanita Verde",
+  "Plata", "Oro", "Esmeralda Azul", "Esmeralda Verde", "Diamante Azul",
+  "Danzanita Verde", "Diamante Fantasía", "Zafiro Amarillo", "Alejandrita Especial", "Accionista ORODIG",
+];
+const RANK_THRESHOLDS_LIST: number[] = [50, 150, 350, 700, 1200, 2500, 5000, 9000, 15000, 23000, 33000, 48000, 70000, 100000, Infinity];
+
+function getMemberStatus(lastPaymentAt: string | null | undefined): { label: string; color: string; bg: string; daysLeft: number } {
+  if (!lastPaymentAt) return { label: "Sin registro", color: "#6b7280", bg: "#6b728015", daysLeft: 0 };
+  const daysSince = Math.floor((Date.now() - new Date(lastPaymentAt).getTime()) / 86400000);
+  if (daysSince <= 30) return { label: "Verde — Activo", color: "#22c55e", bg: "#22c55e15", daysLeft: 30 - daysSince };
+  if (daysSince <= 60) return { label: "Amarillo — Pendiente", color: "#eab308", bg: "#eab30815", daysLeft: 60 - daysSince };
+  if (daysSince < 180) return { label: "Rojo — Inactivo", color: "#ef4444", bg: "#ef444415", daysLeft: 0 };
+  return { label: "Gris — Eliminado", color: "#6b7280", bg: "#6b728015", daysLeft: 0 };
+}
 
 const TABS = ["Perfil", "Editar", "Compras"] as const;
 type Tab = typeof TABS[number];
@@ -75,14 +83,15 @@ export default function Profile() {
     updateProfile.mutate({ data: data as any });
   };
 
-  const nextRank = RANK_NEXT[currentMember.rank];
   const totalEarnings = summary?.totalEarnings ?? 0;
-  const currentIdx = RANKS.indexOf(currentMember.rank);
-  const prevThreshold = currentIdx === 0 ? 0 : RANK_THRESHOLDS[RANKS[currentIdx - 1]];
-  const nextThreshold = RANK_THRESHOLDS[currentMember.rank];
+  const rankIdx = RANK_LIST.indexOf(currentMember.rank);
+  const nextRank = rankIdx >= 0 && rankIdx < RANK_LIST.length - 1 ? RANK_LIST[rankIdx + 1] : null;
+  const prevThreshold = rankIdx <= 0 ? 0 : RANK_THRESHOLDS_LIST[rankIdx - 1];
+  const nextThreshold = RANK_THRESHOLDS_LIST[rankIdx] ?? Infinity;
   const progress = nextRank
     ? Math.min(((totalEarnings - prevThreshold) / (nextThreshold - prevThreshold)) * 100, 100)
     : 100;
+  const memberStatus = getMemberStatus(currentMember.lastPaymentAt);
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
@@ -119,7 +128,8 @@ export default function Profile() {
                     style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
                     {currentMember.fullName.charAt(0)}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-card flex items-center justify-center">
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-card flex items-center justify-center"
+                    style={{ background: memberStatus.color }}>
                     <div className="w-2 h-2 rounded-full bg-white" />
                   </div>
                 </div>
@@ -162,7 +172,7 @@ export default function Profile() {
                 { icon: Users2, label: "Red Total", value: currentMember.totalNetwork },
                 { icon: Star,   label: "Directos",  value: currentMember.directReferrals },
                 { icon: TrendingUp, label: "Total ganado", value: `$${totalEarnings.toFixed(0)}` },
-                { icon: Shield, label: "Estado", value: "Activo" },
+                { icon: Shield, label: "Membresía", value: memberStatus.label.split(" — ")[1] ?? memberStatus.label },
               ].map(({ icon: Icon, label, value }) => (
                 <Card key={label} className="bg-card border-white/5">
                   <CardContent className="p-3 text-center">
@@ -202,6 +212,30 @@ export default function Profile() {
             </Card>
 
             {/* Referral code */}
+            {/* Membership status */}
+            <Card className="border" style={{ borderColor: `${memberStatus.color}30`, background: memberStatus.bg }}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Estado de Membresía</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ background: memberStatus.color, boxShadow: `0 0 6px ${memberStatus.color}` }} />
+                      <span className="text-base font-black" style={{ color: memberStatus.color }}>{memberStatus.label}</span>
+                    </div>
+                  </div>
+                  {memberStatus.daysLeft > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Días restantes</p>
+                      <p className="text-2xl font-black" style={{ color: memberStatus.color }}>{memberStatus.daysLeft}</p>
+                    </div>
+                  )}
+                </div>
+                {memberStatus.daysLeft > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">Tu próxima recompra es en {memberStatus.daysLeft} días para mantener tu membresía activa.</p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="bg-card border-white/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none"
                 style={{ background: GOLD, transform: "translate(40%, -40%)" }} />

@@ -1,6 +1,6 @@
 import { useGetDashboardSummary, useGetDashboardActivity } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight } from "lucide-react";
+import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -12,28 +12,35 @@ import { Link } from "wouter";
 const GOLD = "hsl(42,68%,50%)";
 const GOLD_HEX = "#C9911A";
 
-const RANKS = ["Bronce", "Plata", "Oro", "Platino", "Diamante", "Embajador"];
-const RANK_THRESHOLDS: Record<string, number> = {
-  Bronce: 500, Plata: 2000, Oro: 5000, Platino: 15000, Diamante: 45000, Embajador: Infinity,
-};
-const RANK_NEXT: Record<string, string | null> = {
-  Bronce: "Plata", Plata: "Oro", Oro: "Platino", Platino: "Diamante", Diamante: "Embajador", Embajador: null,
-};
+const RANK_LIST = [
+  "Bronce", "Cobre", "Crisolito", "Belirio Rojo", "Tanzanita Verde",
+  "Plata", "Oro", "Esmeralda Azul", "Esmeralda Verde", "Diamante Azul",
+  "Danzanita Verde", "Diamante Fantasía", "Zafiro Amarillo", "Alejandrita Especial", "Accionista ORODIG",
+];
+const RANK_THRESHOLDS: number[] = [50, 150, 350, 700, 1200, 2500, 5000, 9000, 15000, 23000, 33000, 48000, 70000, 100000, Infinity];
 
 function getRankProgress(rank: string, totalEarnings: number) {
-  const currentIdx = RANKS.indexOf(rank);
-  const nextRank = RANK_NEXT[rank];
-  if (!nextRank) return { pct: 100, nextRank: null, needed: 0, current: totalEarnings };
-  const prevThreshold = currentIdx === 0 ? 0 : RANK_THRESHOLDS[RANKS[currentIdx - 1]];
-  const nextThreshold = RANK_THRESHOLDS[rank];
-  const progress = totalEarnings - prevThreshold;
+  const idx = RANK_LIST.indexOf(rank);
+  const nextRank = idx < RANK_LIST.length - 1 ? RANK_LIST[idx + 1] : null;
+  if (!nextRank) return { pct: 100, nextRank: null, needed: 0 };
+  const prevThreshold = idx === 0 ? 0 : RANK_THRESHOLDS[idx - 1];
+  const nextThreshold = RANK_THRESHOLDS[idx];
   const range = nextThreshold - prevThreshold;
+  const progress = totalEarnings - prevThreshold;
   return {
     pct: Math.min((progress / range) * 100, 100),
     nextRank,
     needed: Math.max(nextThreshold - totalEarnings, 0),
-    current: totalEarnings,
   };
+}
+
+function getMembershipStatus(lastPaymentAt: string | null): { label: string; color: string; dotColor: string; daysRemaining: number } {
+  if (!lastPaymentAt) return { label: "Sin pago", color: "#6b7280", dotColor: "#6b7280", daysRemaining: 0 };
+  const daysSince = Math.floor((Date.now() - new Date(lastPaymentAt).getTime()) / 86400000);
+  if (daysSince <= 30) return { label: "Verde — Activo", color: "#22c55e", dotColor: "#22c55e", daysRemaining: 30 - daysSince };
+  if (daysSince <= 60) return { label: "Amarillo — Activo Pendiente", color: "#eab308", dotColor: "#eab308", daysRemaining: 60 - daysSince };
+  if (daysSince < 180) return { label: "Rojo — Inactivo", color: "#ef4444", dotColor: "#ef4444", daysRemaining: 0 };
+  return { label: "Gris — Eliminado", color: "#6b7280", dotColor: "#6b7280", daysRemaining: 0 };
 }
 
 function getGreeting() {
@@ -118,6 +125,51 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Membership status + Quick links */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Membership semaphore */}
+        {(() => {
+          const ms = getMembershipStatus(currentMember.lastPaymentAt ?? null);
+          return (
+            <Card className="border overflow-hidden" style={{ borderColor: `${ms.dotColor}30`, background: `${ms.dotColor}08` }}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Estado de Membresía</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: ms.dotColor, boxShadow: `0 0 8px ${ms.dotColor}` }} />
+                      <span className="text-sm font-black" style={{ color: ms.dotColor }}>{ms.label}</span>
+                    </div>
+                  </div>
+                  {ms.daysRemaining > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground">Próxima recompra</p>
+                      <p className="text-2xl font-black" style={{ color: ms.dotColor }}>{ms.daysRemaining}d</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Quick nav cards */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { href: "/rangos",  icon: Diamond, label: "Rangos", color: "hsl(42,68%,50%)" },
+            { href: "/premios", icon: Gift,    label: "Premios", color: "#f97316" },
+            { href: "/plan",    icon: Layers,  label: "Plan", color: "#8b5cf6" },
+          ].map(({ href, icon: Icon, label, color }) => (
+            <Link key={href} href={href}>
+              <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border border-white/5 bg-white/2 hover:bg-white/5 transition-all cursor-pointer text-center h-full">
+                <Icon className="w-5 h-5" style={{ color }} />
+                <span className="text-[10px] font-bold text-muted-foreground">{label}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Rank progress */}
