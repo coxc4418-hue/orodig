@@ -37,7 +37,8 @@ import {
   Sparkles,
   Calendar,
   X,
-  FileText
+  FileText,
+  Camera
 } from "lucide-react";
 
 const GOLD = "hsl(42,68%,50%)";
@@ -52,6 +53,55 @@ export default function Community() {
   const [postContent, setPostContent] = useState("");
   const [postImageUrl, setPostImageUrl] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: "Por favor elige una imagen de menos de 10MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // 70% quality compression
+          setPostImageUrl(dataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Queries
   const { data: posts, isLoading: loadingPosts } = useGetCommunityFeed();
@@ -145,17 +195,43 @@ export default function Community() {
                   onChange={(e) => setPostContent(e.target.value)}
                   className="bg-white/3 border-white/10 focus:border-[hsl(42,68%,50%)] focus:ring-1 focus:ring-[hsl(42,68%,50%)] text-white placeholder-muted-foreground min-h-[100px] resize-none rounded-xl"
                 />
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    placeholder="URL de imagen opcional (ej: https://...)"
-                    value={postImageUrl}
-                    onChange={(e) => setPostImageUrl(e.target.value)}
-                    className="bg-white/3 border-white/10 text-white placeholder-muted-foreground rounded-xl flex-1"
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+                  <input
+                    type="file"
+                    id="post-image-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
                   />
+                  <div className="flex items-center gap-2 w-full sm:flex-1">
+                    <label
+                      htmlFor="post-image-upload"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 active:bg-white/15 rounded-xl text-xs font-bold text-white cursor-pointer transition-all h-10 select-none shrink-0"
+                    >
+                      <Camera className="w-4 h-4 text-amber-500" />
+                      <span>Subir Imagen</span>
+                    </label>
+
+                    {postImageUrl ? (
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/15 shrink-0 group">
+                        <img src={postImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setPostImageUrl("")}
+                          className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Quitar imagen"
+                        >
+                          <X className="w-4.5 h-4.5 text-red-500" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground italic">Sin imagen seleccionada</span>
+                    )}
+                  </div>
                   <Button
                     type="submit"
                     disabled={createPostMutation.isPending || !postContent.trim()}
-                    className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black uppercase rounded-xl tracking-wider px-6 transition-all"
+                    className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black uppercase rounded-xl tracking-wider px-6 transition-all h-10 w-full sm:w-auto"
                   >
                     {createPostMutation.isPending ? "Compartiendo..." : "Publicar"}
                     <Send className="w-4 h-4 ml-2" />

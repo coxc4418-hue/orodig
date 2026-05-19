@@ -56,8 +56,9 @@ router.get("/community/feed", requireAuth, async (req: AuthRequest, res): Promis
 
 const CreatePostBody = z.object({
   content: z.string().min(1).max(2000),
-  imageUrl: z.string().url().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
 });
+
 
 // POST /community/posts — create a post
 router.post("/community/posts", requireAuth, async (req: AuthRequest, res): Promise<void> => {
