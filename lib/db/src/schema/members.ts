@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const membersTable = pgTable("members", {
   id: serial("id").primaryKey(),
+  firebaseUid: text("firebase_uid"),
   username: text("username").notNull(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { db, membersTable } from "@workspace/db";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { eq } from "drizzle-orm";
 import { signToken } from "../lib/auth";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
@@ -99,7 +100,27 @@ router.post("/auth/register", async (req: any, res: any): Promise<void> => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const newReferralCode = generateReferralCode(username);
 
+  // 1. Create User in Firebase Authentication
+  let firebaseUid = "";
+  try {
+    const authInstance = getAuth();
+    const userCred = await createUserWithEmailAndPassword(authInstance, email, password);
+    firebaseUid = userCred.user.uid;
+    // Sign out from the client session on the server to prevent leakage
+    await authInstance.signOut();
+  } catch (authError: any) {
+    logger.warn({ email, error: authError.message }, "Error creating Firebase Auth user during registration");
+    if (authError.code === "auth/email-already-in-use") {
+      res.status(400).json({ error: "El correo electrónico ya está registrado en Firebase" });
+      return;
+    }
+    res.status(400).json({ error: `Error en Firebase Auth: ${authError.message}` });
+    return;
+  }
+
+  // 2. Insert into Firestore members table
   const [member] = await db.insert(membersTable).values({
+    firebaseUid,
     username,
     password: hashedPassword,
     fullName,

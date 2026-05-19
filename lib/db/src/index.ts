@@ -60,6 +60,7 @@ function sanitizeData(data: any): any {
 }
 
 const COLUMN_MAP: Record<string, string> = {
+  firebase_uid: "firebaseUid",
   full_name: "fullName",
   referral_code: "referralCode",
   sponsor_id: "sponsorId",
