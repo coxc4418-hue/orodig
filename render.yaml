@@ -4,8 +4,8 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: corepack enable && corepack prepare pnpm@10.33.2 --activate && pnpm install && pnpm --filter @workspace/api-server run build
-    startCommand: pnpm --filter @workspace/api-server run start
+    buildCommand: npx pnpm@10.33.2 install && npx pnpm@10.33.2 --filter @workspace/api-server run build
+    startCommand: npx pnpm@10.33.2 --filter @workspace/api-server run start
     envVars:
       - key: NODE_ENV
         value: production
