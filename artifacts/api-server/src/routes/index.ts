@@ -9,6 +9,7 @@ import productsRouter from "./products";
 import withdrawalsRouter from "./withdrawals";
 import networkRouter from "./network";
 import adminRouter from "./admin";
+import referralsRouter from "./referrals";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(productsRouter);
 router.use(withdrawalsRouter);
 router.use(networkRouter);
 router.use(adminRouter);
+router.use(referralsRouter);
 
 export default router;

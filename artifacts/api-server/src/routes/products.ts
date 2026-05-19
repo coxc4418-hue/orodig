@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, productsTable, purchasesTable, membersTable, earningsTable } from "@workspace/db";
+import { db, productsTable, purchasesTable, membersTable, earningsTable, renewalsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { CreatePurchaseBody } from "@workspace/api-zod";
@@ -52,10 +52,9 @@ async function distributeMultilevelCommissions(buyerId: number, productName: str
     const [sponsor] = await db.select().from(membersTable).where(eq(membersTable.id, currentSponsorId));
     if (!sponsor) break;
 
-    // Check if sponsor is active (membership fee paid in last 60 days)
-    const lastPayment = sponsor.lastPaymentAt;
-    const daysSince = lastPayment ? Math.floor((new Date().getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24)) : 999;
-    if (daysSince > 60 || !sponsor.isActive) {
+    // Check if sponsor is active (membership fee active)
+    const status = sponsor.referralStatus || "ROJO";
+    if (status === "VENCIDO" || status === "ROJO" || status === "SUSPENDIDO" || !sponsor.isActive) {
       // Sponsor is inactive/blocked: bypass them and continue up the chain
       currentSponsorId = sponsor.sponsorId;
       continue;
@@ -168,13 +167,34 @@ router.post("/purchases", requireAuth, async (req: any, res: any): Promise<void>
 
   // Deduct price, add 10% cashback as earning, add points
   const cashback = totalPrice * 0.10;
+  
+  // Calculate membership expiration extension (+30 days)
+  const now = new Date();
+  let baseDate = now;
+  if (member.referralStatus === "VERDE" && member.expiresAt && new Date(member.expiresAt).getTime() > now.getTime()) {
+    baseDate = new Date(member.expiresAt);
+  }
+  const newExpiration = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const prevExp = member.expiresAt;
+
   await db.update(membersTable).set({
     balance: (parseFloat(member.balance) - totalPrice + cashback).toString(),
     points: (parseFloat(member.points) + pointsEarned).toString(),
     totalEarnings: (parseFloat(member.totalEarnings) + cashback).toString(),
-    // Also update lastPaymentAt if they purchase Suscripción or package
-    lastPaymentAt: new Date(),
+    lastPaymentAt: now,
+    referralStatus: "VERDE",
+    activatedAt: member.activatedAt || now,
+    lastRepurchaseAt: now,
+    expiresAt: newExpiration,
   }).where(eq(membersTable.id, req.memberId!));
+
+  // Record audit history in renewals
+  await db.insert(renewalsTable).values({
+    memberId: member.id,
+    purchaseId: purchase.id,
+    previousExpiration: prevExp,
+    newExpiration: newExpiration,
+  });
 
   await db.insert(earningsTable).values({
     memberId: req.memberId!,
@@ -198,6 +218,7 @@ router.post("/purchases", requireAuth, async (req: any, res: any): Promise<void>
     totalPrice: parseFloat(purchase.totalPrice),
     pointsEarned: parseFloat(purchase.pointsEarned),
     createdAt: purchase.createdAt.toISOString(),
+    expiresAt: newExpiration.toISOString(),
   });
 });
 

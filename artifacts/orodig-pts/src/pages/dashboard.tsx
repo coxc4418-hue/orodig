@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useGetDashboardSummary, useGetDashboardActivity } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond } from "lucide-react";
@@ -34,13 +35,112 @@ function getRankProgress(rank: string, totalEarnings: number) {
   };
 }
 
-function getMembershipStatus(lastPaymentAt: string | null): { label: string; color: string; dotColor: string; daysRemaining: number } {
-  if (!lastPaymentAt) return { label: "Sin pago", color: "#6b7280", dotColor: "#6b7280", daysRemaining: 0 };
-  const daysSince = Math.floor((Date.now() - new Date(lastPaymentAt).getTime()) / 86400000);
-  if (daysSince <= 30) return { label: "Verde — Activo", color: "#22c55e", dotColor: "#22c55e", daysRemaining: 30 - daysSince };
-  if (daysSince <= 60) return { label: "Amarillo — Activo Pendiente", color: "#eab308", dotColor: "#eab308", daysRemaining: 60 - daysSince };
-  if (daysSince < 180) return { label: "Rojo — Inactivo", color: "#ef4444", dotColor: "#ef4444", daysRemaining: 0 };
-  return { label: "Gris — Eliminado", color: "#6b7280", dotColor: "#6b7280", daysRemaining: 0 };
+function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string | null; referralStatus: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number; expired: boolean }>({
+    d: 0, h: 0, m: 0, s: 0, expired: true
+  });
+
+  useEffect(() => {
+    if (!expiresAt || referralStatus === "ROJO") {
+      setTimeLeft({ d: 0, h: 0, m: 0, s: 0, expired: true });
+      return;
+    }
+
+    const updateTimer = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ d: 0, h: 0, m: 0, s: 0, expired: true });
+      } else {
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft({ d, h, m, s, expired: false });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, referralStatus]);
+
+  // Color logic based on status and time remaining
+  let color = "#ef4444"; // Red (Expired or ROJO)
+  let glow = "rgba(239, 68, 68, 0.15)";
+  let label = "Vencido / Inactivo";
+
+  if (referralStatus === "VERDE" && !timeLeft.expired) {
+    if (timeLeft.d >= 5) {
+      color = "#22c55e"; // Green
+      glow = "rgba(34, 197, 94, 0.15)";
+      label = "Activo — Verde";
+    } else {
+      color = "#eab308"; // Amber/Yellow
+      glow = "rgba(234, 179, 8, 0.15)";
+      label = "Próximo a Vencer — Amarillo";
+    }
+  } else if (referralStatus === "SUSPENDIDO") {
+    color = "#6b7280"; // Gray
+    glow = "rgba(107, 114, 128, 0.15)";
+    label = "Suspendido";
+  }
+
+  return (
+    <Card className="border relative overflow-hidden backdrop-blur-md bg-white/[0.02]" style={{ borderColor: `${color}30`, boxShadow: `0 0 20px ${glow}` }}>
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-15" style={{ background: color, transform: "translate(20%, -20%)" }} />
+      <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Estado de Membresía</p>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+              <span className="text-sm font-black" style={{ color }}>{label}</span>
+            </div>
+            {referralStatus === "VERDE" && !timeLeft.expired && (
+              <p className="text-xs text-muted-foreground mt-1">Disfrutando de los beneficios de referidos.</p>
+            )}
+          </div>
+          
+          <div className="flex flex-col items-start sm:items-end">
+            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Tiempo de Recompra</p>
+            {timeLeft.expired ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-red-500 mr-2">Expirado</span>
+                <Link href="/plan">
+                  <button className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-red-600/20 active:scale-95">
+                    Renovar
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 font-mono">
+                {[
+                  { value: timeLeft.d, label: "d" },
+                  { value: timeLeft.h, label: "h" },
+                  { value: timeLeft.m, label: "m" },
+                  { value: timeLeft.s, label: "s" }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-baseline">
+                    <span className="text-xl sm:text-2xl font-black" style={{ color }}>
+                      {String(item.value).padStart(2, "0")}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground ml-0.5 mr-2">{item.label}</span>
+                  </div>
+                ))}
+                {timeLeft.d < 5 && (
+                  <Link href="/plan">
+                    <button className="ml-2 px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs rounded-xl transition-all shadow-lg shadow-yellow-500/20 active:scale-95">
+                      Renovar
+                    </button>
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function getGreeting() {
@@ -129,31 +229,10 @@ export default function Dashboard() {
 
       {/* Membership status + Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Membership semaphore */}
-        {(() => {
-          const ms = getMembershipStatus(currentMember.lastPaymentAt ?? null);
-          return (
-            <Card className="border overflow-hidden" style={{ borderColor: `${ms.dotColor}30`, background: `${ms.dotColor}08` }}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Estado de Membresía</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: ms.dotColor, boxShadow: `0 0 8px ${ms.dotColor}` }} />
-                      <span className="text-sm font-black" style={{ color: ms.dotColor }}>{ms.label}</span>
-                    </div>
-                  </div>
-                  {ms.daysRemaining > 0 && (
-                    <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground">Próxima recompra</p>
-                      <p className="text-2xl font-black" style={{ color: ms.dotColor }}>{ms.daysRemaining}d</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
+        <MembershipCountdown
+          expiresAt={(currentMember as any).expiresAt ?? null}
+          referralStatus={(currentMember as any).referralStatus || "ROJO"}
+        />
 
         {/* Quick nav cards */}
         <div className="grid grid-cols-3 gap-2">

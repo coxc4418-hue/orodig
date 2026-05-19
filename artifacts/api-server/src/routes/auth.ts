@@ -36,6 +36,10 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
     sponsorName: sponsorName ?? null,
     avatarUrl: m.avatarUrl,
     lastPaymentAt: m.lastPaymentAt ? m.lastPaymentAt.toISOString() : null,
+    referralStatus: m.referralStatus || "ROJO",
+    activatedAt: m.activatedAt ? m.activatedAt.toISOString() : null,
+    expiresAt: m.expiresAt ? m.expiresAt.toISOString() : null,
+    lastRepurchaseAt: m.lastRepurchaseAt ? m.lastRepurchaseAt.toISOString() : null,
     createdAt: m.createdAt.toISOString(),
   };
 }

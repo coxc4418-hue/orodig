@@ -43,6 +43,10 @@ export const LoginResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
+  "referralStatus": zod.string().default("ROJO"),
+  "activatedAt": zod.coerce.date().nullish(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "lastRepurchaseAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 }),
   "token": zod.string()
@@ -89,6 +93,10 @@ export const GetMeResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
+  "referralStatus": zod.string().default("ROJO"),
+  "activatedAt": zod.coerce.date().nullish(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "lastRepurchaseAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 

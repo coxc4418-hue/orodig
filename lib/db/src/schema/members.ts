@@ -20,6 +20,10 @@ export const membersTable = pgTable("members", {
   sponsorId: integer("sponsor_id"),
   avatarUrl: text("avatar_url"),
   lastPaymentAt: timestamp("last_payment_at", { withTimezone: true }),
+  referralStatus: text("referral_status").notNull().default("ROJO"),
+  activatedAt: timestamp("activated_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  lastRepurchaseAt: timestamp("last_repurchase_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
