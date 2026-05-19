@@ -18,8 +18,11 @@ import {
   Tv,
   MessageSquare,
   Video,
-  Play,
-  Volume2,
+  VideoOff,
+  Mic,
+  MicOff,
+  PlaySquare,
+  Activity,
   Users
 } from "lucide-react";
 
@@ -35,6 +38,13 @@ export default function ConferenceRoom() {
   const confId = parseInt(paramId || "", 10);
   const [chatText, setChatText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+
+  const isAdmin = currentMember?.username === "admin";
 
   // Poll conferences every 5 seconds to keep chat and live status up-to-date
   const { data: conferences, isLoading } = useListConferences({
@@ -62,6 +72,60 @@ export default function ConferenceRoom() {
     }
   });
 
+  const updateConferenceMutation = useUpdateConference({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+      }
+    }
+  });
+
+  // Local camera stream for Admin
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    if (conference?.isLive && isAdmin) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(s => {
+          stream = s;
+          setLocalStream(s);
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+          }
+        })
+        .catch(err => {
+          toast({ title: "Error de cámara", description: "No se pudo acceder a la cámara o micrófono.", variant: "destructive" });
+        });
+    }
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [conference?.isLive, isAdmin]);
+
+  const toggleAudio = () => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+      setIsAudioMuted(!isAudioMuted);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+      setIsVideoMuted(!isVideoMuted);
+    }
+  };
+
+  const endStream = () => {
+    if (confirm("¿Estás seguro de que deseas finalizar la transmisión?")) {
+      updateConferenceMutation.mutate({
+        id: confId,
+        data: { isLive: false, endedAt: new Date().toISOString() }
+      });
+    }
+  };
+
   // Scroll to chat bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,20 +144,7 @@ export default function ConferenceRoom() {
     });
   };
 
-  // Convert generic YouTube watch links to embed links if necessary
-  const getEmbedUrl = (url: string) => {
-    if (!url) return "";
-    let cleanUrl = url.trim();
-    if (cleanUrl.includes("youtube.com/watch?v=")) {
-      const videoId = cleanUrl.split("v=")[1]?.split("&")[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    }
-    if (cleanUrl.includes("youtu.be/")) {
-      const videoId = cleanUrl.split("youtu.be/")[1]?.split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    }
-    return cleanUrl;
-  };
+
 
   if (isLoading) {
     return (
@@ -116,7 +167,7 @@ export default function ConferenceRoom() {
   }
 
   const isLive = conference.isLive;
-  const embedUrl = getEmbedUrl(conference.streamUrl);
+
 
   return (
     <div className="space-y-6">
@@ -149,14 +200,55 @@ export default function ConferenceRoom() {
         {/* Video Player & Info Column */}
         <div className="lg:col-span-2 space-y-4">
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black/80 border border-white/5 shadow-2xl flex items-center justify-center">
-            {isLive && embedUrl ? (
-              <iframe
-                src={embedUrl}
-                title={conference.title}
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
+            {isLive ? (
+              isAdmin ? (
+                <>
+                  <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+                  {/* Admin Controls overlay */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10 z-20 shadow-2xl">
+                    <Button variant={isAudioMuted ? "destructive" : "secondary"} size="icon" onClick={toggleAudio} className="rounded-full w-12 h-12">
+                      {isAudioMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    </Button>
+                    <Button variant={isVideoMuted ? "destructive" : "secondary"} size="icon" onClick={toggleVideo} className="rounded-full w-12 h-12">
+                      {isVideoMuted ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                    </Button>
+                    <Button variant="destructive" onClick={endStream} className="rounded-full px-6 h-12 font-black uppercase tracking-wider shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                      Finalizar
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                // Spectator Simulated Premium Player
+                <div className="absolute inset-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black flex items-center justify-center">
+                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+                  <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 animate-spin-slow blur-xl opacity-50 absolute -inset-2" />
+                      <div className="w-24 h-24 rounded-full bg-black border-2 border-white/10 flex items-center justify-center relative shadow-2xl">
+                         <PlaySquare className="w-10 h-10 text-white opacity-80" />
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 bg-red-600 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
+                         <span className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+                    
+                    <div className="text-center space-y-2">
+                      <h3 className="text-xl font-black text-white tracking-tight">TRANSMISIÓN EN CURSO</h3>
+                      <div className="flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        <span className="flex items-center gap-1.5"><Activity className="w-4 h-4 text-green-400" /> Señal Óptima</span>
+                        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-amber-500" /> En Vivo</span>
+                      </div>
+                    </div>
+                    
+                    {/* Visualizer bars */}
+                    <div className="flex items-end gap-1 h-8 mt-4">
+                      {[...Array(12)].map((_, i) => (
+                        <div key={i} className="w-1.5 bg-gradient-to-t from-amber-600 to-amber-300 rounded-full animate-pulse" style={{ height: `${Math.max(20, Math.random() * 100)}%`, animationDelay: `${i * 0.1}s`, animationDuration: '0.8s' }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               <div className="text-center p-6 space-y-3 z-10 max-w-md">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto text-muted-foreground border border-white/10">

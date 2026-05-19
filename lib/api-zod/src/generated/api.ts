@@ -896,6 +896,7 @@ export const CreateConferenceBody = zod.object({
   "title": zod.string(),
   "description": zod.string().optional(),
   "streamUrl": zod.string().optional(),
+  "isLive": zod.boolean().optional(),
   "scheduledAt": zod.coerce.date().nullish()
 })
 

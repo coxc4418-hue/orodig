@@ -567,6 +567,7 @@ export interface ConferenceInput {
   title: string;
   description?: string;
   streamUrl?: string;
+  isLive?: boolean;
   /** @nullable */
   scheduledAt?: string | null;
 }

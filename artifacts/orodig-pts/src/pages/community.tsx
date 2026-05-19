@@ -9,6 +9,9 @@ import {
   useCreateComment,
   useDeleteComment,
   useListConferences,
+  useCreateConference,
+  useUpdateConference,
+  useDeleteConference,
   useListMembers,
   useGetSocialProfile,
   useToggleFollow,
@@ -38,7 +41,8 @@ import {
   Calendar,
   X,
   FileText,
-  Camera
+  Camera,
+  Plus
 } from "lucide-react";
 
 const GOLD = "hsl(42,68%,50%)";
@@ -53,6 +57,9 @@ export default function Community() {
   const [postContent, setPostContent] = useState("");
   const [postImageUrl, setPostImageUrl] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  
+  const [showAddConference, setShowAddConference] = useState(false);
+  const [newConference, setNewConference] = useState({ title: "", description: "", scheduledAt: "" });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,6 +115,72 @@ export default function Community() {
   const { data: conferences, isLoading: loadingConferences } = useListConferences();
   const { data: members, isLoading: loadingMembers } = useListMembers();
 
+  const createConf = useCreateConference({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+        setShowAddConference(false);
+        setNewConference({ title: "", description: "", scheduledAt: "" });
+        toast({ title: "Conferencia programada con éxito" });
+      }
+    }
+  });
+
+  const updateConf = useUpdateConference({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+      }
+    }
+  });
+
+  const deleteConf = useDeleteConference({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/community/conferences"] });
+      }
+    }
+  });
+
+  const handleCreateConference = () => {
+    if (!newConference.title) return;
+    createConf.mutate({
+      data: {
+        title: newConference.title,
+        description: newConference.description,
+        streamUrl: "",
+        isLive: false,
+        scheduledAt: newConference.scheduledAt ? new Date(newConference.scheduledAt).toISOString() : null,
+      }
+    });
+  };
+
+  const handleStartLiveNow = () => {
+    if (!newConference.title) return;
+    createConf.mutate({
+      data: {
+        title: newConference.title,
+        description: newConference.description,
+        streamUrl: "",
+        isLive: true,
+        scheduledAt: null,
+      }
+    }, {
+      onSuccess: (res: any) => {
+        const id = res.data ? res.data.id : res.id;
+        if (id) {
+          setLocation(`/conference/${id}`);
+        }
+      }
+    });
+  };
+
+  const handleDeleteConference = (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar esta conferencia?")) {
+      deleteConf.mutate({ id });
+    }
+  };
+
   // Mutations
   const createPostMutation = useCreatePost({
     mutation: {
@@ -153,15 +226,6 @@ export default function Community() {
             Conéctate, comparte estrategias y asiste a conferencias de liderazgo.
           </p>
         </div>
-        {isAdmin && (
-          <Button
-            onClick={() => setLocation("/admin?tab=conferences")}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
-          >
-            <Video className="w-4 h-4 mr-2" />
-            Gestionar Conferencias
-          </Button>
-        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -267,7 +331,78 @@ export default function Community() {
         </TabsContent>
 
         {/* CONFERENCES TAB */}
-        <TabsContent value="conferences" className="mt-4">
+        <TabsContent value="conferences" className="mt-4 space-y-4">
+          {isAdmin && (
+            <Card className="bg-card border-white/5 shadow-xl">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Video className="w-4 h-4" style={{ color: GOLD }} />
+                  Panel de Transmisión
+                </CardTitle>
+                <Button
+                  onClick={() => setShowAddConference(!showAddConference)}
+                  variant="outline"
+                  className="h-8 text-xs border-white/10 hover:bg-white/5 text-white"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  {showAddConference ? "Cancelar" : "Programar"}
+                </Button>
+              </CardHeader>
+              {showAddConference && (
+                <CardContent className="space-y-3 pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground uppercase font-black">Título del Live</label>
+                      <input
+                        type="text"
+                        value={newConference.title}
+                        onChange={(e) => setNewConference({ ...newConference, title: e.target.value })}
+                        className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground"
+                        placeholder="Ej: Liderazgo y Crecimiento"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground uppercase font-black">Fecha y Hora Programada (Opcional)</label>
+                      <input
+                        type="datetime-local"
+                        value={newConference.scheduledAt}
+                        onChange={(e) => setNewConference({ ...newConference, scheduledAt: e.target.value })}
+                        className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Descripción</label>
+                    <textarea
+                      value={newConference.description}
+                      onChange={(e) => setNewConference({ ...newConference, description: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground h-10 resize-none"
+                      placeholder="Ej: En esta sesión explicaremos..."
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      onClick={handleCreateConference}
+                      disabled={createConf.isPending || !newConference.title}
+                      variant="outline"
+                      className="border-white/10 text-white hover:bg-white/5 text-xs font-bold h-9"
+                    >
+                      Programar Conferencia
+                    </Button>
+                    <Button
+                      onClick={handleStartLiveNow}
+                      disabled={createConf.isPending || !newConference.title}
+                      className="bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase h-9"
+                    >
+                      <Tv className="w-3.5 h-3.5 mr-1.5" />
+                      Transmitir en Vivo Ahora
+                    </Button>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
+
           {loadingConferences ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2].map((i) => (

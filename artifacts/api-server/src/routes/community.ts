@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   arrayUnion,
   arrayRemove,
   collection,
@@ -73,7 +74,7 @@ router.post("/community/posts", requireAuth, async (req: AuthRequest, res): Prom
   let postCounterRef = doc(firestore, "counters", "posts");
   const counterDoc = await getDoc(postCounterRef);
   const nextId = counterDoc.exists() ? (counterDoc.data().current ?? 0) + 1 : 1;
-  await updateDoc(postCounterRef, { current: nextId });
+  await setDoc(postCounterRef, { current: nextId });
 
   const postRef = doc(firestore, "posts", nextId.toString());
   const now = new Date();
@@ -88,9 +89,7 @@ router.post("/community/posts", requireAuth, async (req: AuthRequest, res): Prom
     createdAt: now,
     updatedAt: now,
   };
-  await updateDoc(postRef, postData).catch(() =>
-    import("firebase/firestore/lite").then(({ setDoc }) => setDoc(postRef, postData))
-  );
+  await setDoc(postRef, postData);
 
   const author = await getMemberMini(memberId);
   res.status(201).json({ ...postData, author, likedByMe: false, createdAt: now.toISOString() });
@@ -289,6 +288,7 @@ const ConferenceBody = z.object({
   title: z.string().min(1),
   description: z.string().optional().default(""),
   streamUrl: z.string().optional().default(""),
+  isLive: z.boolean().optional().default(false),
   scheduledAt: z.string().datetime().nullable().optional(),
 });
 
@@ -320,7 +320,7 @@ router.post("/community/conferences", requireAuth, requireAdmin, async (_req, re
     title: parsed.data.title,
     description: parsed.data.description ?? "",
     streamUrl: parsed.data.streamUrl ?? "",
-    isLive: false,
+    isLive: parsed.data.isLive,
     chatMessages: [],
     scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : null,
     endedAt: null,

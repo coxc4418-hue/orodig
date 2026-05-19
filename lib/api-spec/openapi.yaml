@@ -1616,6 +1616,8 @@ components:
           type: string
         streamUrl:
           type: string
+        isLive:
+          type: boolean
         scheduledAt:
           type: ["string", "null"]
           format: date-time
