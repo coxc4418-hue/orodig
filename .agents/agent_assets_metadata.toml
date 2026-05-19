@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "uR0yKfsF0nytqtv1zwwqu"
+uri = "file://orodig-pts-source.tar.gz"
+type = "unspecified"
+title = "ORODIG PTS — Código Fuente Completo"
+
+[[outputs]]
+id = "AUeHgyh7rK2Lnu9db-m-A"
+uri = "file://ANTIGRAVITY_PROMPT.md"
+type = "text"
+title = "Prompt para Antigravity"
