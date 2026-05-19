@@ -166,9 +166,30 @@ class FirestoreQueryBuilder {
   }
 }
 
+function getTableName(table: any): string {
+  if (!table) return "";
+  if (typeof table === "string") return table;
+  if (table.tableName) return table.tableName;
+  
+  // Try Drizzle's Symbol(drizzle:Name)
+  const symbols = Object.getOwnPropertySymbols(table);
+  const nameSymbol = symbols.find(s => s.toString() === "Symbol(drizzle:Name)");
+  if (nameSymbol) {
+    return table[nameSymbol];
+  }
+  
+  // Try other symbols or keys
+  for (const sym of symbols) {
+    if (sym.toString().includes("Name") || sym.toString().includes("Table")) {
+      return table[sym];
+    }
+  }
+  return "";
+}
+
 export const db = {
   select: () => ({
-    from: (table: any) => new FirestoreQueryBuilder(table.tableName)
+    from: (table: any) => new FirestoreQueryBuilder(getTableName(table))
   }),
 
   insert: (table: any) => ({
@@ -176,9 +197,10 @@ export const db = {
       const promise = (async () => {
         const records = Array.isArray(data) ? data : [data];
         const insertedRecords: any[] = [];
+        const tName = getTableName(table);
         for (const record of records) {
-          const docId = record.id || (await getNextId(table.tableName));
-          const docRef = doc(firestore, table.tableName, docId.toString());
+          const docId = record.id || (await getNextId(tName));
+          const docRef = doc(firestore, tName, docId.toString());
           const finalRecord = {
             ...record,
             id: docId,
@@ -200,12 +222,13 @@ export const db = {
     set: (updateData: any) => ({
       where: (cond: any) => {
         const promise = (async () => {
-          const builder = new FirestoreQueryBuilder(table.tableName);
+          const tName = getTableName(table);
+          const builder = new FirestoreQueryBuilder(tName);
           if (cond) builder.where(cond);
           const matches = await builder;
           const updatedRecords: any[] = [];
           for (const match of matches) {
-            const docRef = doc(firestore, table.tableName, match.id.toString());
+            const docRef = doc(firestore, tName, match.id.toString());
             const finalUpdate = { ...updateData, updatedAt: new Date() };
             await updateDoc(docRef, finalUpdate);
             updatedRecords.push({ ...match, ...finalUpdate });
@@ -221,11 +244,12 @@ export const db = {
 
   delete: (table: any) => ({
     where: async (cond: any) => {
-      const builder = new FirestoreQueryBuilder(table.tableName);
+      const tName = getTableName(table);
+      const builder = new FirestoreQueryBuilder(tName);
       if (cond) builder.where(cond);
       const matches = await builder;
       for (const match of matches) {
-        const docRef = doc(firestore, table.tableName, match.id.toString());
+        const docRef = doc(firestore, tName, match.id.toString());
         await deleteDoc(docRef);
       }
     }
