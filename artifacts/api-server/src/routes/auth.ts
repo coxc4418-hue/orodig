@@ -188,6 +188,7 @@ const UpdateProfileBody = z.object({
   phone: z.string().nullable().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6).optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<void> => {
@@ -196,7 +197,7 @@ router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<voi
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { fullName, email, phone, currentPassword, newPassword } = parsed.data;
+  const { fullName, email, phone, currentPassword, newPassword, avatarUrl } = parsed.data;
 
   const [member] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
   if (!member) {
@@ -208,6 +209,8 @@ router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<voi
   if (fullName) updates.fullName = fullName;
   if (email) updates.email = email;
   if (phone !== undefined) updates.phone = phone;
+  if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+
 
   if (newPassword) {
     if (!currentPassword) {

@@ -339,9 +339,13 @@ export default function Community() {
               {members.filter(m => m.username !== "admin").map((m) => (
                 <Card key={m.id} className="bg-card border-white/5 hover:border-white/10 transition-all">
                   <CardContent className="p-4 flex flex-col items-center text-center space-y-3">
-                    <div className="w-14 h-14 rounded-full flex items-center justify-center font-black text-xl text-black"
+                    <div className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center font-black text-xl text-black shrink-0"
                       style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
-                      {m.fullName.charAt(0)}
+                      {m.avatarUrl ? (
+                        <img src={m.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        m.fullName.charAt(0)
+                      )}
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-sm">{m.fullName}</h3>
@@ -437,10 +441,14 @@ function PostCard({ post, onDelete, onViewProfile }: { post: any; onDelete: () =
           <div className="flex items-center gap-3">
             <button
               onClick={() => onViewProfile(post.memberId)}
-              className="w-10 h-10 rounded-full flex items-center justify-center font-black text-black text-sm transition-transform hover:scale-105"
+              className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center font-black text-black text-sm transition-transform hover:scale-105 shrink-0"
               style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}
             >
-              {post.author?.fullName?.charAt(0) || "?"}
+              {post.author?.avatarUrl ? (
+                <img src={post.author.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                post.author?.fullName?.charAt(0) || "?"
+              )}
             </button>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -578,10 +586,14 @@ function CommentsSection({
                 <div className="flex gap-2">
                   <button
                     onClick={() => onViewProfile(comment.memberId)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-black text-black text-xs shrink-0"
+                    className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-black text-black text-xs shrink-0"
                     style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}
                   >
-                    {comment.author?.fullName?.charAt(0) || "?"}
+                    {comment.author?.avatarUrl ? (
+                      <img src={comment.author.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      comment.author?.fullName?.charAt(0) || "?"
+                    )}
                   </button>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -681,9 +693,13 @@ function SocialProfileModal({ memberId, onClose }: { memberId: number; onClose: 
           <div className="p-6 space-y-6">
             {/* Header info */}
             <div className="flex flex-col items-center text-center space-y-3 pt-2">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center font-black text-3xl text-black shadow-lg"
+              <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center font-black text-3xl text-black shadow-lg shrink-0"
                 style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
-                {profile.fullName.charAt(0)}
+                {profile.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  profile.fullName.charAt(0)
+                )}
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">{profile.fullName}</h2>

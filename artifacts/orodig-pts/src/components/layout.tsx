@@ -107,10 +107,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* User pill */}
       <div className="mx-3 mt-2 flex items-center gap-2 p-2 rounded-lg bg-white/3">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black text-black shrink-0"
-          style={{ background: `linear-gradient(135deg, hsl(42,68%,40%), hsl(42,68%,58%))` }}>
-          {currentMember.fullName.charAt(0)}
-        </div>
+        {currentMember.avatarUrl ? (
+          <img src={currentMember.avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover border border-white/10 shrink-0" />
+        ) : (
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black text-black shrink-0"
+            style={{ background: `linear-gradient(135deg, hsl(42,68%,40%), hsl(42,68%,58%))` }}>
+            {currentMember.fullName.charAt(0)}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white truncate">{currentMember.fullName}</p>
           {!isAdmin ? (

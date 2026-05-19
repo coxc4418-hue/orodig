@@ -14,4 +14,6 @@ export interface UpdateProfileInput {
   currentPassword?: string;
   /** @minLength 6 */
   newPassword?: string;
+  /** @nullable */
+  avatarUrl?: string | null;
 }

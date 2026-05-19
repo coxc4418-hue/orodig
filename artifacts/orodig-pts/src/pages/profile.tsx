@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RankBadge } from "@/components/layout";
-import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package } from "lucide-react";
+import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +61,55 @@ export default function Profile() {
     newPassword: "",
   });
 
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: "Por favor elige una imagen de menos de 10MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+          updateProfile.mutate({ data: { avatarUrl: dataUrl } });
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (!currentMember) return null;
 
   const copyReferral = () => {
@@ -107,9 +156,27 @@ export default function Profile() {
         <div className="space-y-4">
           <Card className="bg-card border-white/5 text-center py-6">
             <CardContent className="px-4 flex flex-col items-center gap-3">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black"
-                style={{ background: `linear-gradient(135deg, hsl(273,100%,40%), hsl(273,100%,60%))` }}>
-                {currentMember.fullName.charAt(0)}
+              <div className="relative group">
+                <input
+                  type="file"
+                  id="admin-avatar-upload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <label htmlFor="admin-avatar-upload" className="cursor-pointer block relative">
+                  {currentMember.avatarUrl ? (
+                    <img src={currentMember.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border border-white/10 hover:brightness-75 transition-all" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black hover:brightness-75 transition-all"
+                      style={{ background: `linear-gradient(135deg, hsl(273,100%,40%), hsl(273,100%,60%))` }}>
+                      {currentMember.fullName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </label>
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
@@ -189,11 +256,27 @@ export default function Profile() {
           <div className="md:col-span-2 space-y-4">
             <Card className="bg-card border-white/5 text-center py-6">
               <CardContent className="px-4 flex flex-col items-center gap-3">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black"
-                    style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
-                    {currentMember.fullName.charAt(0)}
-                  </div>
+                <div className="relative group">
+                  <input
+                    type="file"
+                    id="member-avatar-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <label htmlFor="member-avatar-upload" className="cursor-pointer block relative">
+                    {currentMember.avatarUrl ? (
+                      <img src={currentMember.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border border-white/10 hover:brightness-75 transition-all" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black hover:brightness-75 transition-all"
+                        style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
+                        {currentMember.fullName.charAt(0)}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-5 h-5 text-white" />
+                    </div>
+                  </label>
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-card flex items-center justify-center"
                     style={{ background: memberStatus.color }}>
                     <div className="w-2 h-2 rounded-full bg-white" />

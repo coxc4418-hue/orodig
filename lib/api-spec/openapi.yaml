@@ -936,6 +936,9 @@ components:
         newPassword:
           type: string
           minLength: 6
+        avatarUrl:
+          type: ["string", "null"]
+
 
     AuthResponse:
       type: object

@@ -113,7 +113,8 @@ export const UpdateProfileBody = zod.object({
   "email": zod.string().email().optional(),
   "phone": zod.string().nullish(),
   "currentPassword": zod.string().optional(),
-  "newPassword": zod.string().min(updateProfileBodyNewPasswordMin).optional()
+  "newPassword": zod.string().min(updateProfileBodyNewPasswordMin).optional(),
+  "avatarUrl": zod.string().nullish()
 })
 
 export const UpdateProfileResponse = zod.object({
