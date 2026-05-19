@@ -213,6 +213,15 @@ export interface PurchaseInput {
   quantity: number;
 }
 
+export type PurchaseStatus = typeof PurchaseStatus[keyof typeof PurchaseStatus];
+
+
+export const PurchaseStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
 export interface Purchase {
   id: number;
   memberId: number;
@@ -221,6 +230,7 @@ export interface Purchase {
   quantity: number;
   totalPrice: number;
   pointsEarned: number;
+  status: PurchaseStatus;
   createdAt: string;
 }
 
@@ -397,5 +407,45 @@ export interface AdminStats {
   pendingAmount: number;
   totalVolume: number;
   rankBreakdown: AdminStatsRankBreakdown;
+}
+
+export type AdminPurchaseStatus = typeof AdminPurchaseStatus[keyof typeof AdminPurchaseStatus];
+
+
+export const AdminPurchaseStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminPurchase {
+  id: number;
+  memberId: number;
+  memberName: string;
+  memberUsername: string;
+  productId: number;
+  productName: string;
+  quantity: number;
+  totalPrice: number;
+  pointsEarned: number;
+  status: AdminPurchaseStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdminPurchaseUpdateStatus = typeof AdminPurchaseUpdateStatus[keyof typeof AdminPurchaseUpdateStatus];
+
+
+export const AdminPurchaseUpdateStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminPurchaseUpdate {
+  status: AdminPurchaseUpdateStatus;
+  /** @nullable */
+  notes?: string | null;
 }
 

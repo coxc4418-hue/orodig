@@ -37,13 +37,17 @@ router.get("/purchases", requireAuth, async (req: any, res: any): Promise<void> 
     quantity: p.quantity,
     totalPrice: parseFloat(p.totalPrice),
     pointsEarned: parseFloat(p.pointsEarned),
+    status: p.status || "pending",
     createdAt: p.createdAt.toISOString(),
   })));
 });
 
+// We keep distributeMultilevelCommissions and other helpers as is since they are used during admin approval.
 async function distributeMultilevelCommissions(buyerId: number, productName: string, totalPrice: number) {
   const [buyer] = await db.select().from(membersTable).where(eq(membersTable.id, buyerId));
   if (!buyer) return;
+
+  const safeFloat = (val: any) => val ? (parseFloat(val) || 0) : 0;
 
   let currentSponsorId = buyer.sponsorId;
   for (let level = 1; level <= 50; level++) {
@@ -119,9 +123,9 @@ async function distributeMultilevelCommissions(buyerId: number, productName: str
 
       // 2. Update sponsor balance, totalEarnings, points
       await db.update(membersTable).set({
-        balance: (parseFloat(sponsor.balance) + commissionAmount).toString(),
-        totalEarnings: (parseFloat(sponsor.totalEarnings) + commissionAmount).toString(),
-        points: (parseFloat(sponsor.points) + commissionAmount * 1.5).toString(),
+        balance: (safeFloat(sponsor.balance) + commissionAmount).toString(),
+        totalEarnings: (safeFloat(sponsor.totalEarnings) + commissionAmount).toString(),
+        points: (safeFloat(sponsor.points) + commissionAmount * 1.5).toString(),
       }).where(eq(membersTable.id, sponsor.id));
 
       // 3. Upgrade rank if requirements met
@@ -131,6 +135,9 @@ async function distributeMultilevelCommissions(buyerId: number, productName: str
     currentSponsorId = sponsor.sponsorId;
   }
 }
+
+// Re-export distributeMultilevelCommissions to be used in admin.ts
+export { distributeMultilevelCommissions };
 
 router.post("/purchases", requireAuth, async (req: any, res: any): Promise<void> => {
   const parsed = CreatePurchaseBody.safeParse(req.body);
@@ -149,65 +156,29 @@ router.post("/purchases", requireAuth, async (req: any, res: any): Promise<void>
   const [member] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
   if (!member) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const totalPrice = parseFloat(product.price) * quantity;
-  const pointsEarned = parseFloat(product.pointsReward) * quantity;
+  const safeFloat = (val: any) => val ? (parseFloat(val) || 0) : 0;
+  const totalPrice = safeFloat(product.price) * quantity;
+  const pointsEarned = safeFloat(product.pointsReward) * quantity;
 
-  if (parseFloat(member.balance) < totalPrice) {
-    res.status(400).json({ error: `Saldo insuficiente. Necesitas $${totalPrice.toFixed(2)} y tienes $${parseFloat(member.balance).toFixed(2)}` });
+  if (safeFloat(member.balance) < totalPrice) {
+    res.status(400).json({ error: `Saldo insuficiente. Necesitas $${totalPrice.toFixed(2)} y tienes $${safeFloat(member.balance).toFixed(2)}` });
     return;
   }
 
+  // 1. Debitar el saldo del usuario inmediatamente
+  await db.update(membersTable).set({
+    balance: (safeFloat(member.balance) - totalPrice).toString(),
+  }).where(eq(membersTable.id, req.memberId!));
+
+  // 2. Insertar la compra como PENDIENTE
   const [purchase] = await db.insert(purchasesTable).values({
     memberId: req.memberId!,
     productId,
     quantity,
     totalPrice: totalPrice.toString(),
     pointsEarned: pointsEarned.toString(),
+    status: "pending",
   }).returning();
-
-  // Deduct price, add 10% cashback as earning, add points
-  const cashback = totalPrice * 0.10;
-  
-  // Calculate membership expiration extension (+30 days)
-  const now = new Date();
-  let baseDate = now;
-  if (member.referralStatus === "VERDE" && member.expiresAt && new Date(member.expiresAt).getTime() > now.getTime()) {
-    baseDate = new Date(member.expiresAt);
-  }
-  const newExpiration = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const prevExp = member.expiresAt;
-
-  await db.update(membersTable).set({
-    balance: (parseFloat(member.balance) - totalPrice + cashback).toString(),
-    points: (parseFloat(member.points) + pointsEarned).toString(),
-    totalEarnings: (parseFloat(member.totalEarnings) + cashback).toString(),
-    lastPaymentAt: now,
-    referralStatus: "VERDE",
-    activatedAt: member.activatedAt || now,
-    lastRepurchaseAt: now,
-    expiresAt: newExpiration,
-  }).where(eq(membersTable.id, req.memberId!));
-
-  // Record audit history in renewals
-  await db.insert(renewalsTable).values({
-    memberId: member.id,
-    purchaseId: purchase.id,
-    previousExpiration: prevExp,
-    newExpiration: newExpiration,
-  });
-
-  await db.insert(earningsTable).values({
-    memberId: req.memberId!,
-    type: "purchases",
-    description: `Cashback 10% — ${product.name} x${quantity}`,
-    amount: cashback.toString(),
-    status: "confirmed",
-  });
-
-  await checkAndUpgradeRank(req.memberId!);
-
-  // Distribute commissions up the MLM tree (up to 50 levels)
-  await distributeMultilevelCommissions(req.memberId!, product.name, totalPrice);
 
   res.status(201).json({
     id: purchase.id,
@@ -217,8 +188,8 @@ router.post("/purchases", requireAuth, async (req: any, res: any): Promise<void>
     quantity: purchase.quantity,
     totalPrice: parseFloat(purchase.totalPrice),
     pointsEarned: parseFloat(purchase.pointsEarned),
+    status: purchase.status || "pending",
     createdAt: purchase.createdAt.toISOString(),
-    expiresAt: newExpiration.toISOString(),
   });
 });
 

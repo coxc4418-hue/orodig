@@ -5,16 +5,21 @@
  * ORODIG PTS - Oro Digital Para Todos MLM Platform API
  * OpenAPI spec version: 0.1.0
  */
-import type { PurchaseStatus } from './purchaseStatus';
+import type { AdminPurchaseStatus } from './adminPurchaseStatus';
 
-export interface Purchase {
+export interface AdminPurchase {
   id: number;
   memberId: number;
+  memberName: string;
+  memberUsername: string;
   productId: number;
   productName: string;
   quantity: number;
   totalPrice: number;
   pointsEarned: number;
-  status: PurchaseStatus;
+  status: AdminPurchaseStatus;
+  /** @nullable */
+  notes?: string | null;
   createdAt: Date;
+  updatedAt?: Date;
 }

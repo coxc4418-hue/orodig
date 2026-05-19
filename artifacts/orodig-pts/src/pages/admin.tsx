@@ -16,6 +16,9 @@ import {
   useAdminListDeposits,
   useAdminUpdateDeposit,
   getAdminListDepositsQueryKey,
+  useAdminListPurchases,
+  useAdminUpdatePurchase,
+  getAdminListPurchasesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListWithdrawalsQueryKey, getAdminListProductsQueryKey, getAdminListMembersQueryKey, getAdminGetStatsQueryKey } from "@workspace/api-client-react";
@@ -41,7 +44,7 @@ const METODO_LABELS: Record<string, string> = {
 };
 
 const GOLD = "hsl(42,68%,50%)";
-const TABS = ["Estadísticas", "Depósitos", "Retiros", "Productos", "Miembros"] as const;
+const TABS = ["Estadísticas", "Depósitos", "Retiros", "Compras", "Productos", "Miembros"] as const;
 type Tab = typeof TABS[number];
 
 export default function Admin() {
@@ -59,6 +62,7 @@ export default function Admin() {
   const { data: stats } = useAdminGetStats();
   const { data: withdrawals } = useAdminListWithdrawals();
   const { data: deposits } = useAdminListDeposits();
+  const { data: purchases } = useAdminListPurchases();
   const { data: products } = useAdminListProducts();
   const { data: members } = useAdminListMembers();
 
@@ -69,6 +73,15 @@ export default function Admin() {
     mutation: { 
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getAdminListDepositsQueryKey() });
+        qc.invalidateQueries({ queryKey: getAdminListMembersQueryKey() });
+        qc.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() });
+      } 
+    },
+  });
+  const updatePurchase = useAdminUpdatePurchase({
+    mutation: { 
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getAdminListPurchasesQueryKey() });
         qc.invalidateQueries({ queryKey: getAdminListMembersQueryKey() });
         qc.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() });
       } 
@@ -100,6 +113,10 @@ export default function Admin() {
 
   const handleApproveDeposit = (id: number, status: "approved" | "rejected") => {
     updateDeposit.mutate({ id, data: { status } });
+  };
+
+  const handleApprovePurchase = (id: number, status: "approved" | "rejected") => {
+    updatePurchase.mutate({ id, data: { status } });
   };
 
   const handleToggleMember = (id: number, isActive: boolean) => {
@@ -320,6 +337,68 @@ export default function Admin() {
                         onClick={() => handleApproveWithdrawal(w.id, "paid")}>
                         <DollarSign className="w-3.5 h-3.5 mr-1" /> Marcar Pagado
                       </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* COMPRAS */}
+      {activeTab === "Compras" && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {(!purchases || (purchases as any[]).length === 0) ? (
+            <Card className="bg-card border-white/5">
+              <CardContent className="py-12 text-center">
+                <ShoppingBag className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-40 animate-pulse" />
+                <p className="text-muted-foreground text-sm">No hay reportes de compras.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            (purchases as any[]).map((p) => (
+              <Card key={p.id} className="bg-card border-white/5 overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-bold">{p.memberName ?? `#${p.memberId}`}</span>
+                        <span className="text-xs text-muted-foreground">(@{p.memberUsername})</span>
+                        {statusBadge(p.status)}
+                      </div>
+                      <div className="text-2xl font-black" style={{ color: GOLD }}>${Number(p.totalPrice).toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(p.createdAt), "d MMM yyyy, HH:mm", { locale: es })}
+                        {` · Producto: ${p.productName} (x${p.quantity}) · Puntos: +${p.pointsEarned}`}
+                      </div>
+                      {p.notes && (
+                        <div className="text-xs text-yellow-300 bg-yellow-500/10 rounded-lg p-2 mt-2 border border-yellow-500/20">
+                          <strong>Notas:</strong> {p.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    {p.status === "pending" && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                          onClick={() => handleApprovePurchase(p.id, "approved")}
+                          disabled={updatePurchase.isPending}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> Aprobar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-xs font-bold"
+                          onClick={() => handleApprovePurchase(p.id, "rejected")}
+                          disabled={updatePurchase.isPending}
+                        >
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> Rechazar
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardContent>

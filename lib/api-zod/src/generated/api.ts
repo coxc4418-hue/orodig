@@ -326,6 +326,7 @@ export const ListPurchasesResponseItem = zod.object({
   "quantity": zod.number(),
   "totalPrice": zod.number(),
   "pointsEarned": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.coerce.date()
 })
 export const ListPurchasesResponse = zod.array(ListPurchasesResponseItem)
@@ -514,6 +515,52 @@ export const AdminUpdateDepositResponse = zod.object({
   "referenceNumber": zod.string(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Admin - list all purchases with member info
+ */
+export const AdminListPurchasesResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "memberName": zod.string(),
+  "memberUsername": zod.string(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "totalPrice": zod.number(),
+  "pointsEarned": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const AdminListPurchasesResponse = zod.array(AdminListPurchasesResponseItem)
+
+
+/**
+ * @summary Admin - approve or reject a purchase
+ */
+export const AdminUpdatePurchaseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdatePurchaseBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "notes": zod.string().nullish()
+})
+
+export const AdminUpdatePurchaseResponse = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "totalPrice": zod.number(),
+  "pointsEarned": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.coerce.date()
 })
 

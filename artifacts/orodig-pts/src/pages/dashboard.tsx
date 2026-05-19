@@ -106,7 +106,7 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
             {timeLeft.expired ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-black text-red-500 mr-2">Expirado</span>
-                <Link href="/plan">
+                <Link href="/products">
                   <button className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-red-600/20 active:scale-95">
                     Renovar
                   </button>
@@ -128,7 +128,7 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
                   </div>
                 ))}
                 {timeLeft.d < 5 && (
-                  <Link href="/plan">
+                  <Link href="/products">
                     <button className="ml-2 px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs rounded-xl transition-all shadow-lg shadow-yellow-500/20 active:scale-95">
                       Renovar
                     </button>

@@ -1,8 +1,10 @@
 import { Router, type IRouter } from "express";
-import { db, withdrawalsTable, membersTable, productsTable, earningsTable, depositsTable } from "@workspace/db";
+import { db, withdrawalsTable, membersTable, productsTable, earningsTable, depositsTable, purchasesTable, renewalsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { z } from "zod";
+import { checkAndUpgradeRank } from "../lib/rankHelper";
+import { distributeMultilevelCommissions } from "./products";
 
 const router: IRouter = Router();
 
@@ -140,6 +142,135 @@ router.patch("/admin/deposits/:id", requireAuth, requireAdmin, async (req: AuthR
     notes: updated.notes,
     createdAt: updated.createdAt.toISOString(),
     updatedAt: updated.updatedAt.toISOString(),
+  });
+});
+
+// GET /admin/purchases — list all purchases with member details
+router.get("/admin/purchases", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
+  const purchases = await db.select().from(purchasesTable).orderBy(desc(purchasesTable.createdAt));
+  const members = await db.select().from(membersTable);
+  const memberMap = Object.fromEntries(members.map(m => [m.id, { fullName: m.fullName, username: m.username }]));
+  const products = await db.select().from(productsTable);
+  const productMap = Object.fromEntries(products.map(p => [p.id, p.name]));
+
+  res.json(purchases.map(p => ({
+    id: p.id,
+    memberId: p.memberId,
+    memberName: memberMap[p.memberId]?.fullName ?? "Desconocido",
+    memberUsername: memberMap[p.memberId]?.username ?? "",
+    productId: p.productId,
+    productName: productMap[p.productId] ?? "Producto eliminado",
+    quantity: p.quantity,
+    totalPrice: parseFloat(p.totalPrice),
+    pointsEarned: parseFloat(p.pointsEarned),
+    status: p.status || "pending",
+    notes: p.notes ?? null,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt?.toISOString() || p.createdAt.toISOString(),
+  })));
+});
+
+const UpdatePurchaseBody = z.object({
+  status: z.enum(["approved", "rejected"]),
+  notes: z.string().nullable().optional(),
+});
+
+// PATCH /admin/purchases/:id — approve or reject a purchase
+router.patch("/admin/purchases/:id", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = UpdatePurchaseBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [purchase] = await db.select().from(purchasesTable).where(eq(purchasesTable.id, id));
+  if (!purchase) { res.status(404).json({ error: "Compra no encontrada" }); return; }
+
+  if (purchase.status !== "pending") {
+    res.status(400).json({ error: "La compra ya ha sido procesada anteriormente" });
+    return;
+  }
+
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.id, purchase.memberId));
+  if (!member) { res.status(404).json({ error: "Miembro no encontrado" }); return; }
+
+  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, purchase.productId));
+  if (!product) { res.status(404).json({ error: "Producto no encontrado" }); return; }
+
+  const safeFloat = (val: any) => val ? (parseFloat(val) || 0) : 0;
+  const totalPrice = safeFloat(purchase.totalPrice);
+  const pointsEarned = safeFloat(purchase.pointsEarned);
+
+  if (parsed.data.status === "approved") {
+    // 1. Activar beneficios
+    const cashback = totalPrice * 0.10;
+    const now = new Date();
+    let baseDate = now;
+    if (member.referralStatus === "VERDE" && member.expiresAt && new Date(member.expiresAt).getTime() > now.getTime()) {
+      baseDate = new Date(member.expiresAt);
+    }
+    const newExpiration = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const prevExp = member.expiresAt;
+
+    // Actualizar miembro: balance (añade cashback), puntos, totalEarnings, expiración
+    await db.update(membersTable).set({
+      balance: (safeFloat(member.balance) + cashback).toString(),
+      points: (safeFloat(member.points) + pointsEarned).toString(),
+      totalEarnings: (safeFloat(member.totalEarnings) + cashback).toString(),
+      lastPaymentAt: now,
+      referralStatus: "VERDE",
+      activatedAt: member.activatedAt || now,
+      lastRepurchaseAt: now,
+      expiresAt: newExpiration,
+    }).where(eq(membersTable.id, member.id));
+
+    // Registro en renewalsTable
+    await db.insert(renewalsTable).values({
+      memberId: member.id,
+      purchaseId: purchase.id,
+      previousExpiration: prevExp,
+      newExpiration: newExpiration,
+    });
+
+    // Registro de cashback en earningsTable
+    await db.insert(earningsTable).values({
+      memberId: member.id,
+      type: "purchases",
+      description: `Cashback 10% — ${product.name} x${purchase.quantity}`,
+      amount: cashback.toString(),
+      status: "confirmed",
+    });
+
+    // Validar ascenso de rango
+    await checkAndUpgradeRank(member.id);
+
+    // Distribuir comisiones MLM
+    await distributeMultilevelCommissions(member.id, product.name, totalPrice);
+
+  } else if (parsed.data.status === "rejected") {
+    // 2. Reembolsar el saldo debitado al miembro
+    await db.update(membersTable).set({
+      balance: (safeFloat(member.balance) + totalPrice).toString(),
+    }).where(eq(membersTable.id, member.id));
+  }
+
+  const [updated] = await db.update(purchasesTable).set({
+    status: parsed.data.status,
+    notes: parsed.data.notes ?? null,
+    updatedAt: new Date(),
+  }).where(eq(purchasesTable.id, id)).returning();
+
+  res.json({
+    id: updated.id,
+    memberId: updated.memberId,
+    productId: updated.productId,
+    productName: product.name,
+    quantity: updated.quantity,
+    totalPrice: parseFloat(updated.totalPrice),
+    pointsEarned: parseFloat(updated.pointsEarned),
+    status: updated.status,
+    notes: updated.notes,
+    createdAt: updated.createdAt.toISOString(),
   });
 });
 

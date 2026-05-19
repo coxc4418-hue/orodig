@@ -488,6 +488,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/Deposit"
 
+  /admin/purchases:
+    get:
+      operationId: adminListPurchases
+      tags: [admin]
+      summary: Admin - list all purchases with member info
+      responses:
+        "200":
+          description: All purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminPurchase"
+
+  /admin/purchases/{id}:
+    patch:
+      operationId: adminUpdatePurchase
+      tags: [admin]
+      summary: Admin - approve or reject a purchase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminPurchaseUpdate"
+      responses:
+        "200":
+          description: Purchase updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Purchase"
+
   /admin/products:
     get:
       operationId: adminListProducts
@@ -885,7 +925,7 @@ components:
 
     Purchase:
       type: object
-      required: [id, memberId, productId, productName, quantity, totalPrice, pointsEarned, createdAt]
+      required: [id, memberId, productId, productName, quantity, totalPrice, pointsEarned, status, createdAt]
       properties:
         id:
           type: integer
@@ -901,6 +941,9 @@ components:
           type: number
         pointsEarned:
           type: number
+        status:
+          type: string
+          enum: [pending, approved, rejected]
         createdAt:
           type: string
           format: date-time
@@ -1080,3 +1123,47 @@ components:
           type: object
           additionalProperties:
             type: integer
+
+    AdminPurchase:
+      type: object
+      required: [id, memberId, memberName, memberUsername, productId, productName, quantity, totalPrice, pointsEarned, status, createdAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        memberName:
+          type: string
+        memberUsername:
+          type: string
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        pointsEarned:
+          type: number
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminPurchaseUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        notes:
+          type: ["string", "null"]

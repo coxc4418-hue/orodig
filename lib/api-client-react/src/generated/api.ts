@@ -24,6 +24,8 @@ import type {
   AdminDeposit,
   AdminDepositUpdate,
   AdminMemberUpdate,
+  AdminPurchase,
+  AdminPurchaseUpdate,
   AdminStats,
   AdminWithdrawal,
   AdminWithdrawalUpdate,
@@ -2083,6 +2085,155 @@ export const useAdminUpdateDeposit = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAdminUpdateDepositMutationOptions(options));
+    }
+
+export const getAdminListPurchasesUrl = () => {
+
+
+
+
+  return `/api/admin/purchases`
+}
+
+/**
+ * @summary Admin - list all purchases with member info
+ */
+export const adminListPurchases = async ( options?: RequestInit): Promise<AdminPurchase[]> => {
+
+  return customFetch<AdminPurchase[]>(getAdminListPurchasesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListPurchasesQueryKey = () => {
+    return [
+    `/api/admin/purchases`
+    ] as const;
+    }
+
+
+export const getAdminListPurchasesQueryOptions = <TData = Awaited<ReturnType<typeof adminListPurchases>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListPurchases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListPurchasesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListPurchases>>> = ({ signal }) => adminListPurchases({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListPurchases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListPurchasesQueryResult = NonNullable<Awaited<ReturnType<typeof adminListPurchases>>>
+export type AdminListPurchasesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin - list all purchases with member info
+ */
+
+export function useAdminListPurchases<TData = Awaited<ReturnType<typeof adminListPurchases>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListPurchases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListPurchasesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAdminUpdatePurchaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/purchases/${id}`
+}
+
+/**
+ * @summary Admin - approve or reject a purchase
+ */
+export const adminUpdatePurchase = async (id: number,
+    adminPurchaseUpdate: AdminPurchaseUpdate, options?: RequestInit): Promise<Purchase> => {
+
+  return customFetch<Purchase>(getAdminUpdatePurchaseUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adminPurchaseUpdate,)
+  }
+);}
+
+
+
+
+export const getAdminUpdatePurchaseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdatePurchase>>, TError,{id: number;data: BodyType<AdminPurchaseUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminUpdatePurchase>>, TError,{id: number;data: BodyType<AdminPurchaseUpdate>}, TContext> => {
+
+const mutationKey = ['adminUpdatePurchase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUpdatePurchase>>, {id: number;data: BodyType<AdminPurchaseUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  adminUpdatePurchase(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminUpdatePurchaseMutationResult = NonNullable<Awaited<ReturnType<typeof adminUpdatePurchase>>>
+    export type AdminUpdatePurchaseMutationBody = BodyType<AdminPurchaseUpdate>
+    export type AdminUpdatePurchaseMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin - approve or reject a purchase
+ */
+export const useAdminUpdatePurchase = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdatePurchase>>, TError,{id: number;data: BodyType<AdminPurchaseUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminUpdatePurchase>>,
+        TError,
+        {id: number;data: BodyType<AdminPurchaseUpdate>},
+        TContext
+      > => {
+      return useMutation(getAdminUpdatePurchaseMutationOptions(options));
     }
 
 export const getAdminListProductsUrl = () => {
