@@ -449,3 +449,7 @@ export interface AdminPurchaseUpdate {
   notes?: string | null;
 }
 
+export type AdminDeleteProduct200 = {
+  success?: boolean;
+};
+

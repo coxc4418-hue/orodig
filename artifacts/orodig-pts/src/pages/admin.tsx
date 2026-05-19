@@ -10,6 +10,7 @@ import {
   useAdminListProducts,
   useAdminCreateProduct,
   useAdminUpdateProduct,
+  useAdminDeleteProduct,
   useAdminListMembers,
   useAdminUpdateMember,
   useListEarnings,
@@ -25,7 +26,7 @@ import { getAdminListWithdrawalsQueryKey, getAdminListProductsQueryKey, getAdmin
 import {
   Users, DollarSign, TrendingUp, ArrowDownToLine,
   ShoppingBag, CheckCircle, XCircle, Clock, ChevronRight,
-  Shield, Plus, Edit, ToggleLeft, ToggleRight
+  Shield, Plus, Edit, ToggleLeft, ToggleRight, Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -93,6 +94,9 @@ export default function Admin() {
   const updateProduct = useAdminUpdateProduct({
     mutation: { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() }) },
   });
+  const deleteProduct = useAdminDeleteProduct({
+    mutation: { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() }) },
+  });
   const updateMember = useAdminUpdateMember({
     mutation: {
       onSuccess: () => {
@@ -104,6 +108,8 @@ export default function Admin() {
 
   const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", pointsReward: "", category: "pack" });
   const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [editingProduct, setEditingProduct] = useState({ name: "", description: "", price: "", pointsReward: "", category: "pack" });
 
   if (!currentMember || currentMember.username !== "admin") return null;
 
@@ -135,6 +141,30 @@ export default function Admin() {
         isActive: !product.isActive,
       },
     });
+  };
+
+  const handleUpdateProduct = () => {
+    if (!editingProductId || !editingProduct.name || !editingProduct.price) return;
+    updateProduct.mutate({
+      id: editingProductId,
+      data: {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        price: parseFloat(editingProduct.price) || 0,
+        pointsReward: parseInt(editingProduct.pointsReward) || 0,
+        category: editingProduct.category,
+      },
+    }, {
+      onSuccess: () => {
+        setEditingProductId(null);
+      }
+    });
+  };
+
+  const handleDeleteProduct = (id: number) => {
+    if (confirm("¿Estás seguro de que deseas eliminar permanentemente esta membresía?")) {
+      deleteProduct.mutate({ id });
+    }
   };
 
   const handleCreateProduct = () => {
@@ -491,6 +521,76 @@ export default function Admin() {
             </Card>
           )}
 
+          {editingProductId !== null && (
+            <Card className="bg-card border-white/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Editar Producto</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Nombre *</label>
+                    <input
+                      value={editingProduct.name}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      placeholder="Pack Oro"
+                      className="w-full rounded-lg px-3 py-2 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Precio ($) *</label>
+                    <input
+                      value={editingProduct.price}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                      placeholder="99.99"
+                      type="number"
+                      className="w-full rounded-lg px-3 py-2 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Puntos</label>
+                    <input
+                      value={editingProduct.pointsReward}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, pointsReward: e.target.value })}
+                      placeholder="1000"
+                      type="number"
+                      className="w-full rounded-lg px-3 py-2 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Categoría</label>
+                    <select
+                      value={editingProduct.category}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                      className="w-full rounded-lg px-3 py-2 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30"
+                    >
+                      <option value="pack">Pack</option>
+                      <option value="producto">Producto</option>
+                      <option value="servicio">Servicio</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">Descripción</label>
+                  <input
+                    value={editingProduct.description}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    placeholder="Descripción del producto..."
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-white/30"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditingProductId(null)}>Cancelar</Button>
+                  <Button size="sm" className="text-xs font-bold text-black"
+                    style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` }}
+                    onClick={handleUpdateProduct} disabled={updateProduct.isPending}>
+                    {updateProduct.isPending ? "Guardando..." : "Guardar Cambios"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {(products as any[] ?? []).map((p) => (
             <Card key={p.id} className="bg-card border-white/5">
               <CardContent className="p-4 flex items-center gap-3 flex-wrap justify-between">
@@ -512,18 +612,46 @@ export default function Admin() {
                   </div>
                   {p.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.description}</p>}
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs h-8 shrink-0"
-                  onClick={() => handleToggleProduct(p.id, p)}
-                  disabled={updateProduct.isPending}
-                >
-                  {p.isActive
-                    ? <><ToggleRight className="w-4 h-4 mr-1 text-green-400" /> Desactivar</>
-                    : <><ToggleLeft className="w-4 h-4 mr-1 text-muted-foreground" /> Activar</>
-                  }
-                </Button>
+                <div className="flex gap-1.5 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-8 shrink-0 hover:bg-white/5 text-muted-foreground hover:text-white"
+                    onClick={() => {
+                      setEditingProductId(p.id);
+                      setEditingProduct({
+                        name: p.name,
+                        description: p.description ?? "",
+                        price: p.price.toString(),
+                        pointsReward: (p.pointsReward ?? 0).toString(),
+                        category: p.category,
+                      });
+                    }}
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1" /> Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-8 shrink-0 hover:bg-red-500/10 text-muted-foreground hover:text-red-400"
+                    onClick={() => handleDeleteProduct(p.id)}
+                    disabled={deleteProduct.isPending}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1 text-red-500" /> Quitar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-8 shrink-0"
+                    onClick={() => handleToggleProduct(p.id, p)}
+                    disabled={updateProduct.isPending}
+                  >
+                    {p.isActive
+                      ? <><ToggleRight className="w-4 h-4 mr-1 text-green-400" /> Desactivar</>
+                      : <><ToggleLeft className="w-4 h-4 mr-1 text-muted-foreground" /> Activar</>
+                    }
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

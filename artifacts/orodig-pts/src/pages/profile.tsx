@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { RankBadge } from "@/components/layout";
 import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package } from "lucide-react";
 import { format } from "date-fns";
@@ -92,6 +93,71 @@ export default function Profile() {
     ? Math.min(((totalEarnings - prevThreshold) / (nextThreshold - prevThreshold)) * 100, 100)
     : 100;
   const memberStatus = getMemberStatus(currentMember.lastPaymentAt);
+
+  const isAdmin = currentMember.username === "admin";
+
+  if (isAdmin) {
+    return (
+      <div className="space-y-5 max-w-xl mx-auto">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">MI PERFIL</h1>
+          <p className="text-muted-foreground text-sm">Información de la cuenta de administrador.</p>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="bg-card border-white/5 text-center py-6">
+            <CardContent className="px-4 flex flex-col items-center gap-3">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black"
+                style={{ background: `linear-gradient(135deg, hsl(273,100%,40%), hsl(273,100%,60%))` }}>
+                {currentMember.fullName.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
+                <p className="text-muted-foreground text-xs mb-2">@{currentMember.username}</p>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border border-purple-500/30 bg-purple-500/10 text-purple-300">
+                  Administrador General
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-white/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <User className="w-4 h-4 text-purple-300" />
+                Información del Administrador
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[
+                { icon: Mail,     label: "Correo",        value: currentMember.email },
+                { icon: Phone,    label: "Teléfono",      value: currentMember.phone ?? "No registrado" },
+                { icon: Calendar, label: "Miembro desde", value: format(new Date(currentMember.createdAt), "d 'de' MMMM 'de' yyyy", { locale: es }) },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center gap-3 p-3 rounded-lg bg-white/3 border border-white/5">
+                  <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{label}</div>
+                    <div className="text-white text-sm font-medium truncate">{value}</div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Button
+            variant="destructive"
+            className="w-full font-bold uppercase tracking-wider h-11 text-sm bg-red-600/90 hover:bg-red-600 text-white"
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {logoutMutation.isPending ? "Cerrando sesión..." : "Cerrar Sesión"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto">

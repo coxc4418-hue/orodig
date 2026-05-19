@@ -7,6 +7,7 @@
  */
 
 export * from './activityItem';
+export * from './adminDeleteProduct200';
 export * from './adminDeposit';
 export * from './adminDepositStatus';
 export * from './adminDepositUpdate';

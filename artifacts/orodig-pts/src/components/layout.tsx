@@ -61,8 +61,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isAdmin = currentMember.username === "admin";
   const navItems = isAdmin
-    ? [...NAV_ITEMS, { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" }]
+    ? [{ href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" }]
     : NAV_ITEMS;
+  const bottomNavItems = isAdmin
+    ? [{ href: "/admin", icon: Shield, label: "Admin" }]
+    : BOTTOM_NAV;
 
   // Membership status from lastPaymentAt
   const membershipStatus = getMembershipStatusClient(currentMember.lastPaymentAt ?? null);
@@ -84,14 +87,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Balance quick card */}
-      <div className="mx-3 mt-3 p-3 rounded-xl border" style={{ background: "linear-gradient(135deg, hsl(42,68%,12%), hsl(42,68%,8%))", borderColor: "hsl(42 68% 50% / 0.2)" }}>
-        <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Saldo disponible</div>
-        <div className="text-xl font-black" style={{ color: GOLD }}>${Number(currentMember.balance).toFixed(2)}</div>
-        <div className="flex items-center gap-1.5 mt-1">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: membershipStatus.dotColor }} />
-          <span className="text-[10px] text-muted-foreground">{membershipStatus.label}</span>
+      {!isAdmin && (
+        <div className="mx-3 mt-3 p-3 rounded-xl border" style={{ background: "linear-gradient(135deg, hsl(42,68%,12%), hsl(42,68%,8%))", borderColor: "hsl(42 68% 50% / 0.2)" }}>
+          <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Saldo disponible</div>
+          <div className="text-xl font-black" style={{ color: GOLD }}>${Number(currentMember.balance).toFixed(2)}</div>
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: membershipStatus.dotColor }} />
+            <span className="text-[10px] text-muted-foreground">{membershipStatus.label}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* User pill */}
       <div className="mx-3 mt-2 flex items-center gap-2 p-2 rounded-lg bg-white/3">
@@ -101,7 +106,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white truncate">{currentMember.fullName}</p>
-          <RankBadge rank={currentMember.rank} />
+          {!isAdmin ? (
+            <RankBadge rank={currentMember.rank} />
+          ) : (
+            <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0 border border-purple-500/30 bg-purple-500/10 text-purple-300">
+              Administrador
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -165,10 +176,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           ORODIG <span className="text-white">PTS</span>
         </h1>
         <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs text-muted-foreground leading-none">Saldo</div>
-            <div className="text-sm font-black leading-none" style={{ color: GOLD }}>${Number(currentMember.balance).toFixed(2)}</div>
-          </div>
+          {!isAdmin ? (
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground leading-none">Saldo</div>
+              <div className="text-sm font-black leading-none" style={{ color: GOLD }}>${Number(currentMember.balance).toFixed(2)}</div>
+            </div>
+          ) : (
+            <div className="text-right">
+              <div className="text-[10px] font-black uppercase text-purple-300 tracking-wider">Modo Admin</div>
+            </div>
+          )}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-colors"
@@ -202,7 +219,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-white/5 flex">
-        {BOTTOM_NAV.map((item) => {
+        {bottomNavItems.map((item) => {
           const isActive = location === item.href;
           return (
             <Link

@@ -625,6 +625,18 @@ export const AdminUpdateProductResponse = zod.object({
 
 
 /**
+ * @summary Admin - delete a product
+ */
+export const AdminDeleteProductParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminDeleteProductResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
  * @summary Admin - list all members with full stats
  */
 export const AdminListMembersResponseItem = zod.object({

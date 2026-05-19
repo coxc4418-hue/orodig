@@ -186,7 +186,8 @@ router.patch("/admin/purchases/:id", requireAuth, requireAdmin, async (req: Auth
   const [purchase] = await db.select().from(purchasesTable).where(eq(purchasesTable.id, id));
   if (!purchase) { res.status(404).json({ error: "Compra no encontrada" }); return; }
 
-  if (purchase.status !== "pending") {
+  const currentStatus = purchase.status || "pending";
+  if (currentStatus !== "pending") {
     res.status(400).json({ error: "La compra ya ha sido procesada anteriormente" });
     return;
   }
@@ -333,6 +334,18 @@ router.patch("/admin/products/:id", requireAuth, requireAdmin, async (req: AuthR
   const [updated] = await db.update(productsTable).set(updates).where(eq(productsTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "Producto no encontrado" }); return; }
   res.json({ ...updated, price: parseFloat(updated.price), pointsReward: parseFloat(updated.pointsReward) });
+});
+
+// DELETE /admin/products/:id — delete product
+router.delete("/admin/products/:id", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  
+  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id));
+  if (!product) { res.status(404).json({ error: "Producto no encontrado" }); return; }
+
+  await db.delete(productsTable).where(eq(productsTable.id, id));
+  res.json({ success: true });
 });
 
 // GET /admin/members — all members with full stats

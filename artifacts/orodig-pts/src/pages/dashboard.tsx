@@ -8,7 +8,7 @@ import { es } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { RankBadge } from "@/components/layout";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 const GOLD = "hsl(42,68%,50%)";
 const GOLD_HEX = "#C9911A";
@@ -152,6 +152,14 @@ function getGreeting() {
 
 export default function Dashboard() {
   const { currentMember } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (currentMember?.username === "admin") {
+      setLocation("/admin");
+    }
+  }, [currentMember, setLocation]);
+
   const { toast } = useToast();
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary();
   const { data: activity, isLoading: isActivityLoading } = useGetDashboardActivity();
