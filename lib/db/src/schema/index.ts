@@ -4,3 +4,5 @@ export * from "./products";
 export * from "./purchases";
 export * from "./withdrawals";
 export * from "./renewals";
+export * from "./deposits";
+

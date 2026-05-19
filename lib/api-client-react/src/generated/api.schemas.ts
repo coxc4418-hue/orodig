@@ -295,6 +295,71 @@ export interface AdminWithdrawalUpdate {
   notes?: string | null;
 }
 
+export type DepositStatus = typeof DepositStatus[keyof typeof DepositStatus];
+
+
+export const DepositStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface Deposit {
+  id: number;
+  memberId: number;
+  amount: number;
+  method: string;
+  referenceNumber: string;
+  status: DepositStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface DepositInput {
+  /** @minimum 1 */
+  amount: number;
+  method: string;
+  referenceNumber: string;
+}
+
+export type AdminDepositStatus = typeof AdminDepositStatus[keyof typeof AdminDepositStatus];
+
+
+export const AdminDepositStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminDeposit {
+  id: number;
+  memberId: number;
+  memberName: string;
+  memberUsername: string;
+  amount: number;
+  method: string;
+  referenceNumber: string;
+  status: AdminDepositStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type AdminDepositUpdateStatus = typeof AdminDepositUpdateStatus[keyof typeof AdminDepositUpdateStatus];
+
+
+export const AdminDepositUpdateStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminDepositUpdate {
+  status: AdminDepositUpdateStatus;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export type AdminMemberUpdateRank = typeof AdminMemberUpdateRank[keyof typeof AdminMemberUpdateRank];
 
 

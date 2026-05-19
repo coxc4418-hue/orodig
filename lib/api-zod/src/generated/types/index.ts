@@ -7,6 +7,10 @@
  */
 
 export * from './activityItem';
+export * from './adminDeposit';
+export * from './adminDepositStatus';
+export * from './adminDepositUpdate';
+export * from './adminDepositUpdateStatus';
 export * from './adminMemberUpdate';
 export * from './adminMemberUpdateRank';
 export * from './adminStats';
@@ -17,6 +21,9 @@ export * from './adminWithdrawalUpdate';
 export * from './adminWithdrawalUpdateStatus';
 export * from './authResponse';
 export * from './dashboardSummary';
+export * from './deposit';
+export * from './depositInput';
+export * from './depositStatus';
 export * from './earning';
 export * from './earningsByType';
 export * from './earningStatus';

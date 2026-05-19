@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, withdrawalsTable, membersTable, productsTable, earningsTable } from "@workspace/db";
+import { db, withdrawalsTable, membersTable, productsTable, earningsTable, depositsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { z } from "zod";
@@ -77,6 +77,72 @@ router.patch("/admin/withdrawals/:id", requireAuth, requireAdmin, async (req: Au
     createdAt: updated.createdAt.toISOString(),
   });
 });
+
+// GET /admin/deposits — list all deposits with member info
+router.get("/admin/deposits", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
+  const deposits = await db.select().from(depositsTable).orderBy(desc(depositsTable.createdAt));
+  const members = await db.select().from(membersTable);
+  const memberMap = Object.fromEntries(members.map(m => [m.id, { fullName: m.fullName, username: m.username }]));
+  res.json(deposits.map(d => ({
+    id: d.id,
+    memberId: d.memberId,
+    memberName: memberMap[d.memberId]?.fullName ?? "Desconocido",
+    memberUsername: memberMap[d.memberId]?.username ?? "",
+    amount: parseFloat(d.amount),
+    method: d.method,
+    referenceNumber: d.referenceNumber,
+    status: d.status,
+    notes: d.notes,
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+  })));
+});
+
+const UpdateDepositBody = z.object({
+  status: z.enum(["approved", "rejected"]),
+  notes: z.string().nullable().optional(),
+});
+
+// PATCH /admin/deposits/:id — approve or reject a deposit
+router.patch("/admin/deposits/:id", requireAuth, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = UpdateDepositBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [deposit] = await db.select().from(depositsTable).where(eq(depositsTable.id, id));
+  if (!deposit) { res.status(404).json({ error: "Depósito no encontrado" }); return; }
+
+  // Lógica de aprobación: acreditar balance al miembro
+  if (parsed.data.status === "approved" && deposit.status === "pending") {
+    const [member] = await db.select().from(membersTable).where(eq(membersTable.id, deposit.memberId));
+    if (member) {
+      await db.update(membersTable).set({
+        balance: (parseFloat(member.balance) + parseFloat(deposit.amount)).toString(),
+      }).where(eq(membersTable.id, deposit.memberId));
+    }
+  }
+
+  const [updated] = await db.update(depositsTable).set({
+    status: parsed.data.status,
+    notes: parsed.data.notes ?? null,
+    updatedAt: new Date(),
+  }).where(eq(depositsTable.id, id)).returning();
+
+  res.json({
+    id: updated.id,
+    memberId: updated.memberId,
+    amount: parseFloat(updated.amount),
+    method: updated.method,
+    referenceNumber: updated.referenceNumber,
+    status: updated.status,
+    notes: updated.notes,
+    createdAt: updated.createdAt.toISOString(),
+    updatedAt: updated.updatedAt.toISOString(),
+  });
+});
+
 
 const ProductBody = z.object({
   name: z.string().min(1),

@@ -13,6 +13,9 @@ import {
   useAdminListMembers,
   useAdminUpdateMember,
   useListEarnings,
+  useAdminListDeposits,
+  useAdminUpdateDeposit,
+  getAdminListDepositsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListWithdrawalsQueryKey, getAdminListProductsQueryKey, getAdminListMembersQueryKey, getAdminGetStatsQueryKey } from "@workspace/api-client-react";
@@ -27,8 +30,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 
+const METODO_LABELS: Record<string, string> = {
+  crypto_usdt:    "USDT (TRC20)",
+  crypto_btc:     "Bitcoin (BTC)",
+  bank_transfer:  "Transferencia Bancaria",
+  pago_movil:     "Pago Móvil",
+  vault_gems:     "Bóveda (Piedras Preciosas)",
+  vault_goods:    "Bóveda (Artículos / Productos)",
+  vault_cash:     "Bóveda (Consignación en Efectivo)",
+};
+
 const GOLD = "hsl(42,68%,50%)";
-const TABS = ["Estadísticas", "Retiros", "Productos", "Miembros"] as const;
+const TABS = ["Estadísticas", "Depósitos", "Retiros", "Productos", "Miembros"] as const;
 type Tab = typeof TABS[number];
 
 export default function Admin() {
@@ -45,11 +58,21 @@ export default function Admin() {
 
   const { data: stats } = useAdminGetStats();
   const { data: withdrawals } = useAdminListWithdrawals();
+  const { data: deposits } = useAdminListDeposits();
   const { data: products } = useAdminListProducts();
   const { data: members } = useAdminListMembers();
 
   const updateWithdrawal = useAdminUpdateWithdrawal({
     mutation: { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListWithdrawalsQueryKey() }) },
+  });
+  const updateDeposit = useAdminUpdateDeposit({
+    mutation: { 
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getAdminListDepositsQueryKey() });
+        qc.invalidateQueries({ queryKey: getAdminListMembersQueryKey() });
+        qc.invalidateQueries({ queryKey: getAdminGetStatsQueryKey() });
+      } 
+    },
   });
   const createProduct = useAdminCreateProduct({
     mutation: { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() }) },
@@ -73,6 +96,10 @@ export default function Admin() {
 
   const handleApproveWithdrawal = (id: number, status: "approved" | "rejected" | "paid") => {
     updateWithdrawal.mutate({ id, data: { status } });
+  };
+
+  const handleApproveDeposit = (id: number, status: "approved" | "rejected") => {
+    updateDeposit.mutate({ id, data: { status } });
   };
 
   const handleToggleMember = (id: number, isActive: boolean) => {
@@ -193,6 +220,58 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* DEPÓSITOS */}
+      {activeTab === "Depósitos" && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {(!deposits || (deposits as any[]).length === 0) ? (
+            <Card className="bg-card border-white/5">
+              <CardContent className="py-12 text-center">
+                <ArrowDownToLine className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-40 animate-pulse" />
+                <p className="text-muted-foreground text-sm">No hay reportes de depósito.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            (deposits as any[]).map((d) => (
+              <Card key={d.id} className="bg-card border-white/5 overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-white font-bold">{d.memberName ?? `#${d.memberId}`}</span>
+                        {d.memberUsername && <span className="text-xs text-muted-foreground">(@{d.memberUsername})</span>}
+                        {statusBadge(d.status)}
+                      </div>
+                      <div className="text-2xl font-black text-green-400">${Number(d.amount).toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground mt-1.5 font-mono space-y-1 bg-black/20 p-2.5 rounded border border-white/5">
+                        <p><span className="text-white font-semibold">Método:</span> {METODO_LABELS[d.method] ?? d.method}</p>
+                        <p><span className="text-white font-semibold">Referencia:</span> {d.referenceNumber}</p>
+                        <p className="text-[10px] text-muted-foreground pt-1 border-t border-white/5 mt-1">{format(new Date(d.createdAt), "d MMM yyyy, HH:mm", { locale: es })}</p>
+                      </div>
+                    </div>
+                    {d.status === "pending" && (
+                      <div className="flex gap-2 flex-wrap self-center">
+                        <Button size="sm" className="text-xs font-bold h-8 bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleApproveDeposit(d.id, "approved")}
+                          disabled={updateDeposit.isPending}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> Aprobar
+                        </Button>
+                        <Button size="sm" variant="destructive" className="text-xs font-bold h-8"
+                          onClick={() => handleApproveDeposit(d.id, "rejected")}
+                          disabled={updateDeposit.isPending}
+                        >
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> Rechazar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       )}
 

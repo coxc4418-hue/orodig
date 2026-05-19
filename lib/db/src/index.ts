@@ -85,6 +85,7 @@ const COLUMN_MAP: Record<string, string> = {
   points_earned: "pointsEarned",
   source_member_id: "sourceMemberId",
   account_details: "accountDetails",
+  reference_number: "referenceNumber",
 };
 
 function translateFieldName(name: string): string {

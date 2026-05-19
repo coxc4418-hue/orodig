@@ -43,10 +43,6 @@ export const LoginResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.string().default("ROJO"),
-  "activatedAt": zod.coerce.date().nullish(),
-  "expiresAt": zod.coerce.date().nullish(),
-  "lastRepurchaseAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 }),
   "token": zod.string()
@@ -93,10 +89,6 @@ export const GetMeResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.string().default("ROJO"),
-  "activatedAt": zod.coerce.date().nullish(),
-  "expiresAt": zod.coerce.date().nullish(),
-  "lastRepurchaseAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date()
 })
 
@@ -382,6 +374,35 @@ export const CreateWithdrawalBody = zod.object({
 
 
 /**
+ * @summary List deposit requests for the current member
+ */
+export const ListDepositsResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "referenceNumber": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListDepositsResponse = zod.array(ListDepositsResponseItem)
+
+
+/**
+ * @summary Request/notify a new deposit
+ */
+
+
+
+export const CreateDepositBody = zod.object({
+  "amount": zod.number().min(1),
+  "method": zod.string(),
+  "referenceNumber": zod.string()
+})
+
+
+/**
  * @summary Get the current member's own referral network tree
  */
 export const GetMyNetworkResponse = zod.object({
@@ -450,6 +471,48 @@ export const AdminUpdateWithdrawalResponse = zod.object({
   "method": zod.string(),
   "accountDetails": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected', 'paid']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Admin - list all deposits with member info
+ */
+export const AdminListDepositsResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "memberName": zod.string(),
+  "memberUsername": zod.string(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "referenceNumber": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const AdminListDepositsResponse = zod.array(AdminListDepositsResponseItem)
+
+
+/**
+ * @summary Admin - approve or reject a deposit
+ */
+export const AdminUpdateDepositParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateDepositBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "notes": zod.string().nullish()
+})
+
+export const AdminUpdateDepositResponse = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "amount": zod.number(),
+  "method": zod.string(),
+  "referenceNumber": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
   "notes": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })

@@ -23,6 +23,8 @@ tags:
     description: Product catalog
   - name: withdrawals
     description: Withdrawal requests
+  - name: deposits
+    description: Deposit requests
   - name: network
     description: Referral network tree
   - name: admin
@@ -346,6 +348,40 @@ paths:
         "400":
           description: Insufficient balance or invalid amount
 
+  /deposits:
+    get:
+      operationId: listDeposits
+      tags: [deposits]
+      summary: List deposit requests for the current member
+      responses:
+        "200":
+          description: Deposit list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Deposit"
+    post:
+      operationId: createDeposit
+      tags: [deposits]
+      summary: Request/notify a new deposit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositInput"
+      responses:
+        "201":
+          description: Deposit requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deposit"
+        "400":
+          description: Validation error or invalid amount
+
   /network/my:
     get:
       operationId: getMyNetwork
@@ -411,6 +447,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Withdrawal"
+
+  /admin/deposits:
+    get:
+      operationId: adminListDeposits
+      tags: [admin]
+      summary: Admin - list all deposits with member info
+      responses:
+        "200":
+          description: All deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminDeposit"
+
+  /admin/deposits/{id}:
+    patch:
+      operationId: adminUpdateDeposit
+      tags: [admin]
+      summary: Admin - approve or reject a deposit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDepositUpdate"
+      responses:
+        "200":
+          description: Deposit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deposit"
 
   /admin/products:
     get:
@@ -898,6 +974,78 @@ components:
         status:
           type: string
           enum: [approved, rejected, paid]
+        notes:
+          type: ["string", "null"]
+
+    Deposit:
+      type: object
+      required: [id, memberId, amount, method, referenceNumber, status, createdAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        amount:
+          type: number
+        method:
+          type: string
+        referenceNumber:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    DepositInput:
+      type: object
+      required: [amount, method, referenceNumber]
+      properties:
+        amount:
+          type: number
+          minimum: 1
+        method:
+          type: string
+        referenceNumber:
+          type: string
+
+    AdminDeposit:
+      type: object
+      required: [id, memberId, memberName, memberUsername, amount, method, referenceNumber, status, createdAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        memberName:
+          type: string
+        memberUsername:
+          type: string
+        amount:
+          type: number
+        method:
+          type: string
+        referenceNumber:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminDepositUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
         notes:
           type: ["string", "null"]
 

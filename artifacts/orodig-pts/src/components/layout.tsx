@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, History, Trophy, ShoppingBag,
   ArrowDownToLine, User, Menu, X, LogOut, ChevronRight, Shield,
-  Gift, Layers, Diamond
+  Gift, Layers, Diamond, Wallet
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,11 +20,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${GOLD} transparent transparent transparent` }} />
-          <p className="text-sm font-medium" style={{ color: GOLD }}>Cargando...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="w-12 h-12 rounded-full border-4 border-white/5 border-t-[hsl(42,68%,50%)] animate-spin" />
       </div>
     );
   }
@@ -39,7 +36,7 @@ const NAV_ITEMS = [
   { href: "/earnings",   icon: History,         label: "Ganancias",       short: "Ganancias" },
   { href: "/leaderboard",icon: Trophy,          label: "Clasificación",   short: "Top" },
   { href: "/products",   icon: ShoppingBag,     label: "Productos",       short: "Tienda" },
-  { href: "/withdrawals",icon: ArrowDownToLine, label: "Retiros",         short: "Retiros" },
+  { href: "/withdrawals",icon: Wallet,          label: "Fondos",          short: "Fondos" },
   { href: "/rangos",     icon: Diamond,         label: "Rangos Mineros",  short: "Rangos" },
   { href: "/premios",    icon: Gift,            label: "Premios & Metas", short: "Premios" },
   { href: "/plan",       icon: Layers,          label: "Plan de Compensación", short: "Plan" },
