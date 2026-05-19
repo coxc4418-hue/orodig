@@ -5,7 +5,7 @@ async function run() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: "admin",
+        username: "user_accionista",
         password: "OroDig2026!"
       })
     });

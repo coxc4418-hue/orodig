@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
+import loginBg from "@assets/login_galaxy.jpg";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El usuario es obligatorio"),
@@ -58,17 +59,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-black">
-      {/* Video background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: 0.85 }}
-      >
-        <source src={`${import.meta.env.BASE_URL}login-bg.mp4`} type="video/mp4" />
-      </video>
+      {/* Image background */}
+      <div
+        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${loginBg})`, opacity: 0.8 }}
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
 
       {/* Login card */}

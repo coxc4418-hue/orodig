@@ -61,15 +61,57 @@ function sanitizeData(data: any): any {
 
 function parseCondition(cond: any): any {
   if (!cond) return null;
-  if (cond.type) return cond;
-
-  // Drizzle Eq / BinaryOperator
-  if (cond.left && cond.right !== undefined) {
-    const fieldName = cond.left.name || cond.left.mapFromDriverValue || "id";
-    return { type: "eq", field: fieldName, value: cond.right };
+  
+  // Custom simple condition objects
+  if (cond.type === "eq" || cond.type === "in") {
+    return cond;
   }
 
-  // Drizzle InArray
+  // Drizzle Eq / BinaryOperator / SQL class
+  if (cond.queryChunks && Array.isArray(cond.queryChunks)) {
+    let fieldName: string | null = null;
+    let singleVal: any = undefined;
+    const arrayVals: any[] = [];
+    let hasInOperator = false;
+
+    for (const chunk of cond.queryChunks) {
+      if (chunk && typeof chunk === "object") {
+        // If it is a Drizzle column representation
+        if (chunk.name && (chunk.table || chunk.columnType)) {
+          fieldName = chunk.name;
+        }
+        // If it is a Param chunk
+        else if (chunk.value !== undefined) {
+          if (Array.isArray(chunk.value)) {
+            arrayVals.push(...chunk.value);
+            hasInOperator = true;
+          } else {
+            arrayVals.push(chunk.value);
+            singleVal = chunk.value;
+          }
+        }
+      } else if (typeof chunk === "string" && chunk.toUpperCase().includes(" IN ")) {
+        hasInOperator = true;
+      }
+    }
+
+    if (fieldName) {
+      if (hasInOperator || arrayVals.length > 1) {
+        return { type: "in", field: fieldName, value: arrayVals };
+      }
+      if (singleVal !== undefined) {
+        return { type: "eq", field: fieldName, value: singleVal };
+      }
+    }
+  }
+
+  // Fallback to legacy Drizzle structure
+  if (cond.left && cond.right !== undefined) {
+    const fieldName = cond.left.name || cond.left.mapFromDriverValue || "id";
+    const val = cond.right && typeof cond.right === "object" && cond.right.value !== undefined ? cond.right.value : cond.right;
+    return { type: "eq", field: fieldName, value: val };
+  }
+
   if (cond.left && cond.values && Array.isArray(cond.values)) {
     const fieldName = cond.left.name || cond.left.mapFromDriverValue || "id";
     return { type: "in", field: fieldName, value: cond.values };
