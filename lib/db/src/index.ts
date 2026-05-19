@@ -11,7 +11,7 @@ import {
   query,
   where,
   Timestamp
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import * as schema from "./schema";
 
 const firebaseConfig = {
