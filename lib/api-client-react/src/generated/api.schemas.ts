@@ -58,6 +58,16 @@ export const MemberRank = {
   Accionista_ORODIG: 'Accionista ORODIG',
 } as const;
 
+export type MemberReferralStatus = typeof MemberReferralStatus[keyof typeof MemberReferralStatus];
+
+
+export const MemberReferralStatus = {
+  VERDE: 'VERDE',
+  AMARILLO: 'AMARILLO',
+  ROJO: 'ROJO',
+  SUSPENDIDO: 'SUSPENDIDO',
+} as const;
+
 export interface Member {
   id: number;
   username: string;
@@ -81,6 +91,13 @@ export interface Member {
   avatarUrl?: string | null;
   /** @nullable */
   lastPaymentAt?: string | null;
+  referralStatus?: MemberReferralStatus;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  lastRepurchaseAt?: string | null;
   createdAt: string;
 }
 

@@ -38,6 +38,7 @@ export * from './leaderboardEntry';
 export * from './loginInput';
 export * from './member';
 export * from './memberRank';
+export * from './memberReferralStatus';
 export * from './monthlyEarning';
 export * from './networkNode';
 export * from './product';

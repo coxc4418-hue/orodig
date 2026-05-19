@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MemberRank } from './memberRank';
+import type { MemberReferralStatus } from './memberReferralStatus';
 
 export interface Member {
   id: number;
@@ -30,5 +31,12 @@ export interface Member {
   avatarUrl?: string | null;
   /** @nullable */
   lastPaymentAt?: Date | null;
+  referralStatus?: MemberReferralStatus;
+  /** @nullable */
+  expiresAt?: Date | null;
+  /** @nullable */
+  activatedAt?: Date | null;
+  /** @nullable */
+  lastRepurchaseAt?: Date | null;
   createdAt: Date;
 }

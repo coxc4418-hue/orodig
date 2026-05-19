@@ -748,6 +748,18 @@ components:
         lastPaymentAt:
           type: ["string", "null"]
           format: date-time
+        referralStatus:
+          type: string
+          enum: [VERDE, AMARILLO, ROJO, SUSPENDIDO]
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        activatedAt:
+          type: ["string", "null"]
+          format: date-time
+        lastRepurchaseAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
