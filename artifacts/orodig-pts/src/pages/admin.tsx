@@ -25,7 +25,7 @@ import {
   useUpdateConference,
   useDeleteConference,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getAdminListWithdrawalsQueryKey, getAdminListProductsQueryKey, getAdminListMembersQueryKey, getAdminGetStatsQueryKey } from "@workspace/api-client-react";
 import {
   Users, DollarSign, TrendingUp, ArrowDownToLine,
@@ -49,7 +49,7 @@ const METODO_LABELS: Record<string, string> = {
 };
 
 const GOLD = "hsl(42,68%,50%)";
-const TABS = ["Estadísticas", "Depósitos", "Retiros", "Compras", "Productos", "Miembros"] as const;
+const TABS = ["Estadísticas", "Depósitos", "Retiros", "Compras", "Productos", "Miembros", "Premios"] as const;
 type Tab = typeof TABS[number];
 
 export default function Admin() {
@@ -60,6 +60,58 @@ export default function Admin() {
   const [showAddConference, setShowAddConference] = useState(false);
   const [newConference, setNewConference] = useState({ title: "", description: "", streamUrl: "", scheduledAt: "" });
   const qc = useQueryClient();
+
+  const [showPrizeForm, setShowPrizeForm] = useState(false);
+  const [editingPrizeId, setEditingPrizeId] = useState<number | null>(null);
+  const [newPrize, setNewPrize] = useState({
+    name: "",
+    description: "",
+    fracciones: "",
+    emoji: "🎁",
+    accentColor: "#eab308",
+    isSpecial: false,
+    imageUrl: "",
+    color: "from-amber-500/20 to-yellow-500/10",
+    borderColor: "border-amber-500/30"
+  });
+
+  const { data: prizes, refetch: refetchPrizes } = useQuery<any[]>({
+    queryKey: ["/api/community/prizes"],
+    queryFn: async () => {
+      const res = await fetch("/api/community/prizes");
+      if (!res.ok) throw new Error("Error loading prizes");
+      return res.json();
+    }
+  });
+
+  const savePrizeMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch("/api/community/prizes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Error saving prize");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchPrizes();
+      qc.invalidateQueries({ queryKey: ["/api/community/prizes"] });
+      setEditingPrizeId(null);
+      setShowPrizeForm(false);
+      setNewPrize({
+        name: "",
+        description: "",
+        fracciones: "",
+        emoji: "🎁",
+        accentColor: "#eab308",
+        isSpecial: false,
+        imageUrl: "",
+        color: "from-amber-500/20 to-yellow-500/10",
+        borderColor: "border-amber-500/30"
+      });
+    }
+  });
 
   useEffect(() => {
     if (currentMember && currentMember.username !== "admin") {
@@ -779,6 +831,260 @@ export default function Admin() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* PREMIOS */}
+      {activeTab === "Premios" && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-black text-white uppercase tracking-wider">Gestión de Premios</h2>
+            <Button
+              onClick={() => {
+                setEditingPrizeId(null);
+                setNewPrize({
+                  name: "",
+                  description: "",
+                  fracciones: "",
+                  emoji: "🎁",
+                  accentColor: "#eab308",
+                  isSpecial: false,
+                  imageUrl: "",
+                  color: "from-amber-500/20 to-yellow-500/10",
+                  borderColor: "border-amber-500/30"
+                });
+                setShowPrizeForm(!showPrizeForm);
+              }}
+              className="bg-white/10 text-white hover:bg-white/20 text-xs font-bold"
+            >
+              <Plus className="w-4 h-4 mr-1" /> {showPrizeForm ? "Cancelar" : "Nuevo Premio"}
+            </Button>
+          </div>
+
+          {showPrizeForm && (
+            <Card className="bg-card border border-white/10 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold text-white uppercase tracking-wider">
+                  {editingPrizeId ? "Editar Premio" : "Agregar Nuevo Premio"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Nombre del Premio</label>
+                    <input
+                      type="text"
+                      value={newPrize.name}
+                      onChange={(e) => setNewPrize({ ...newPrize, name: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-amber-500/50"
+                      placeholder="Ej: Reloj Rolex, Moto Premium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Fracciones Requeridas</label>
+                    <input
+                      type="number"
+                      value={newPrize.fracciones}
+                      disabled={newPrize.isSpecial}
+                      onChange={(e) => setNewPrize({ ...newPrize, fracciones: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-amber-500/50"
+                      placeholder="Ej: 300000"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Emoji Ilustrativo</label>
+                    <input
+                      type="text"
+                      value={newPrize.emoji}
+                      onChange={(e) => setNewPrize({ ...newPrize, emoji: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-amber-500/50"
+                      placeholder="Ej: 🏍️, 🚗, 🏠"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">Color de Acento (Hex o Selector)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={newPrize.accentColor}
+                        onChange={(e) => setNewPrize({ ...newPrize, accentColor: e.target.value })}
+                        className="w-10 h-9 bg-white/3 border border-white/10 rounded-lg px-1 py-1 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={newPrize.accentColor}
+                        onChange={(e) => setNewPrize({ ...newPrize, accentColor: e.target.value })}
+                        className="flex-1 bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-black">Descripción o Detalles del Premio</label>
+                  <textarea
+                    value={newPrize.description}
+                    onChange={(e) => setNewPrize({ ...newPrize, description: e.target.value })}
+                    className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground min-h-[80px] focus:outline-none focus:border-amber-500/50"
+                    placeholder="Describe los detalles, condiciones y metas del premio..."
+                  />
+                </div>
+
+                {/* Image upload */}
+                <div className="space-y-2 border border-white/5 bg-white/2 p-3 rounded-xl">
+                  <label className="text-[10px] text-muted-foreground uppercase font-black block">Imagen desde Galería (Reemplaza Emoji)</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      id="prize-image-upload"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const MAX_WIDTH = 400;
+                            const MAX_HEIGHT = 400;
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > height) {
+                              if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                            } else {
+                              if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            if (ctx) {
+                              ctx.drawImage(img, 0, 0, width, height);
+                              setNewPrize(prev => ({ ...prev, imageUrl: canvas.toDataURL("image/jpeg", 0.7) }));
+                            }
+                          };
+                          img.src = event.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <label
+                      htmlFor="prize-image-upload"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg text-xs font-bold text-white cursor-pointer transition-all select-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Seleccionar de Galería</span>
+                    </label>
+
+                    {newPrize.imageUrl ? (
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/15">
+                        <img src={newPrize.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setNewPrize({ ...newPrize, imageUrl: "" })}
+                          className="absolute inset-0 bg-black/80 flex items-center justify-center text-red-500 font-bold text-[10px]"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">Se usará Emoji si no hay imagen</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isSpecial"
+                    checked={newPrize.isSpecial}
+                    onChange={(e) => {
+                      const isSpec = e.target.checked;
+                      setNewPrize({
+                        ...newPrize,
+                        isSpecial: isSpec,
+                        fracciones: isSpec ? "0" : newPrize.fracciones
+                      });
+                    }}
+                    className="rounded bg-white/3 border-white/10"
+                  />
+                  <label htmlFor="isSpecial" className="text-xs text-white font-bold select-none cursor-pointer">
+                    Es un Premio Especial (Sin fracciones requeridas, meta de liderazgo)
+                  </label>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    savePrizeMutation.mutate({
+                      id: editingPrizeId,
+                      ...newPrize,
+                      fracciones: parseInt(newPrize.fracciones) || 0
+                    });
+                  }}
+                  disabled={savePrizeMutation.isPending || !newPrize.name}
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-black uppercase rounded-lg tracking-wider py-2"
+                >
+                  {savePrizeMutation.isPending ? "Guardando..." : "Guardar Premio"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(prizes || []).map((prize) => (
+              <Card key={prize.id} className="bg-card border border-white/5 relative overflow-hidden flex flex-col justify-between">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {prize.imageUrl ? (
+                        <img src={prize.imageUrl} alt={prize.name} className="w-12 h-12 rounded-lg object-cover border border-white/10" />
+                      ) : (
+                        <div className="text-3xl">{prize.emoji}</div>
+                      )}
+                      <div>
+                        <CardTitle className="text-sm font-bold text-white">{prize.name}</CardTitle>
+                        <p className="text-xs font-bold" style={{ color: prize.accentColor }}>
+                          {prize.isSpecial ? "Especial / Liderazgo" : `${prize.fracciones.toLocaleString("es-CO")} fracciones`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  <p className="text-xs text-muted-foreground leading-relaxed min-h-[40px]">{prize.description}</p>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-8 flex-1 border-white/10 hover:bg-white/5 text-white"
+                      onClick={() => {
+                        setEditingPrizeId(prize.id);
+                        setNewPrize({
+                          name: prize.name,
+                          description: prize.description,
+                          fracciones: prize.fracciones.toString(),
+                          emoji: prize.emoji,
+                          accentColor: prize.accentColor,
+                          isSpecial: !!prize.isSpecial,
+                          imageUrl: prize.imageUrl || "",
+                          color: prize.color || "from-amber-500/20 to-yellow-500/10",
+                          borderColor: prize.borderColor || "border-amber-500/30"
+                        });
+                        setShowPrizeForm(true);
+                      }}
+                    >
+                      <Edit className="w-3.5 h-3.5 mr-1" /> Editar Premio
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 

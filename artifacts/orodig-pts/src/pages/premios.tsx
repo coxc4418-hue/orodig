@@ -3,60 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Star, Plane, Home, Car, Bike } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const GOLD = "hsl(42,68%,50%)";
 
-const PRIZES = [
-  {
-    id: 1,
-    name: "Moto",
-    emoji: "🏍️",
-    icon: Bike,
-    fracciones: 300_000,
-    description: "Moto de alta gama financiada por ORODIG PTS para los mejores líderes.",
-    color: "from-orange-500/20 to-amber-500/10",
-    borderColor: "border-orange-500/30",
-    accentColor: "#f97316",
-    locked: false,
-  },
-  {
-    id: 2,
-    name: "Carro",
-    emoji: "🚗",
-    icon: Car,
-    fracciones: 900_000,
-    description: "Vehículo deportivo financiado para los líderes más destacados de la plataforma.",
-    color: "from-red-500/20 to-rose-500/10",
-    borderColor: "border-red-500/30",
-    accentColor: "#ef4444",
-    locked: false,
-  },
-  {
-    id: 3,
-    name: "Casa de Lujo",
-    emoji: "🏠",
-    icon: Home,
-    fracciones: 2_000_000,
-    description: "Casa de lujo con 1 baño, 1 cocina, 1 sala y 2 cuartos. Premio exclusivo ORODIG PTS.",
-    color: "from-purple-500/20 to-violet-500/10",
-    borderColor: "border-purple-500/30",
-    accentColor: "#a855f7",
-    locked: false,
-  },
-  {
-    id: 4,
-    name: "Viaje Exclusivo",
-    emoji: "✈️",
-    icon: Plane,
-    fracciones: 0,
-    description: "Todo gratis × 3 días y 2 noches. Incluye comidas, hospedaje, refrigerios y transporte. Será un paseo inolvidable.",
-    color: "from-blue-500/20 to-cyan-500/10",
-    borderColor: "border-blue-500/30",
-    accentColor: "#3b82f6",
-    locked: false,
-    isSpecial: true,
-  },
-];
+// Las metas y premios ahora se gestionan dinámicamente desde el panel de administración.
 
 const QUINCENAL_WINNERS = [
   { week: "Semana 1", name: "José Ruiz", amount: 250 },
@@ -74,6 +25,15 @@ const QUINCENAL_WINNERS = [
 export default function Premios() {
   const { currentMember } = useAuth();
   const userPoints = currentMember ? parseFloat(currentMember.points as unknown as string) : 0;
+
+  const { data: prizes, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/community/prizes"],
+    queryFn: async () => {
+      const res = await fetch("/api/community/prizes");
+      if (!res.ok) throw new Error("Error al obtener premios");
+      return res.json();
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -114,34 +74,45 @@ export default function Premios() {
       </div>
 
       {/* Prize cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {PRIZES.map((prize) => {
-          const progress = prize.fracciones > 0 ? Math.min((userPoints / prize.fracciones) * 100, 100) : 100;
-          const remaining = Math.max(prize.fracciones - userPoints, 0);
-          const achieved = prize.fracciones > 0 ? userPoints >= prize.fracciones : true;
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((n) => (
+            <Card key={n} className="h-40 border border-white/5 bg-white/3 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(prizes || []).map((prize) => {
+            const progress = prize.fracciones > 0 ? Math.min((userPoints / prize.fracciones) * 100, 100) : 100;
+            const remaining = Math.max(prize.fracciones - userPoints, 0);
+            const achieved = prize.fracciones > 0 ? userPoints >= prize.fracciones : true;
 
-          return (
-            <Card key={prize.id} className={`relative overflow-hidden border bg-gradient-to-br ${prize.color} ${prize.borderColor}`}>
-              {achieved && (
-                <div className="absolute top-3 right-3">
-                  <Badge className="text-[10px] font-black uppercase" style={{ background: prize.accentColor, color: "white" }}>
-                    ¡Logrado!
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="text-4xl">{prize.emoji}</div>
-                  <div>
-                    <CardTitle className="text-lg font-black text-white">{prize.name}</CardTitle>
-                    {!prize.isSpecial && (
-                      <p className="text-xs font-bold" style={{ color: prize.accentColor }}>
-                        {prize.fracciones.toLocaleString("es-CO")} fracciones
-                      </p>
-                    )}
+            return (
+              <Card key={prize.id} className={`relative overflow-hidden border bg-gradient-to-br ${prize.color || "from-amber-500/10 to-yellow-500/5"} ${prize.borderColor || "border-white/10"}`}>
+                {achieved && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="text-[10px] font-black uppercase" style={{ background: prize.accentColor, color: "white" }}>
+                      ¡Logrado!
+                    </Badge>
                   </div>
-                </div>
-              </CardHeader>
+                )}
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    {prize.imageUrl ? (
+                      <img src={prize.imageUrl} alt={prize.name} className="w-12 h-12 rounded-xl object-cover border border-white/15 shrink-0" />
+                    ) : (
+                      <div className="text-4xl">{prize.emoji}</div>
+                    )}
+                    <div>
+                      <CardTitle className="text-lg font-black text-white">{prize.name}</CardTitle>
+                      {!prize.isSpecial && (
+                        <p className="text-xs font-bold" style={{ color: prize.accentColor }}>
+                          {prize.fracciones.toLocaleString("es-CO")} fracciones
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground leading-relaxed">{prize.description}</p>
 
@@ -177,6 +148,7 @@ export default function Premios() {
           );
         })}
       </div>
+      )}
 
       {/* Bono Quincenal */}
       <Card className="border" style={{ borderColor: "hsl(42 68% 50% / 0.2)", background: "linear-gradient(135deg, hsl(42,68%,10%), hsl(42,68%,6%))" }}>

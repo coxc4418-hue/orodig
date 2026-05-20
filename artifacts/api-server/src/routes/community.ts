@@ -411,4 +411,112 @@ router.delete("/community/conferences/:id", requireAuth, requireAdmin, async (_r
   res.json({ success: true });
 });
 
+const SEED_PRIZES = [
+  {
+    id: 1,
+    name: "Moto",
+    emoji: "🏍️",
+    imageUrl: "",
+    fracciones: 300000,
+    description: "Moto de alta gama financiada por ORODIG PTS para los mejores líderes.",
+    color: "from-orange-500/20 to-amber-500/10",
+    borderColor: "border-orange-500/30",
+    accentColor: "#f97316",
+    isSpecial: false
+  },
+  {
+    id: 2,
+    name: "Carro",
+    emoji: "🚗",
+    imageUrl: "",
+    fracciones: 900000,
+    description: "Vehículo deportivo financiado para los líderes más destacados de la plataforma.",
+    color: "from-red-500/20 to-rose-500/10",
+    borderColor: "border-red-500/30",
+    accentColor: "#ef4444",
+    isSpecial: false
+  },
+  {
+    id: 3,
+    name: "Casa de Lujo",
+    emoji: "🏠",
+    imageUrl: "",
+    fracciones: 2000000,
+    description: "Casa de lujo con 1 baño, 1 cocina, 1 sala y 2 cuartos. Premio exclusivo ORODIG PTS.",
+    color: "from-purple-500/20 to-violet-500/10",
+    borderColor: "border-purple-500/30",
+    accentColor: "#a855f7",
+    isSpecial: false
+  },
+  {
+    id: 4,
+    name: "Viaje Exclusivo",
+    emoji: "✈️",
+    imageUrl: "",
+    fracciones: 0,
+    description: "Todo gratis × 3 días y 2 noches. Incluye comidas, hospedaje, refrigerios y transporte. Será un paseo inolvidable.",
+    color: "from-blue-500/20 to-cyan-500/10",
+    borderColor: "border-blue-500/30",
+    accentColor: "#3b82f6",
+    isSpecial: true
+  }
+];
+
+// GET /community/prizes
+router.get("/community/prizes", async (req, res): Promise<void> => {
+  try {
+    const prizesCol = collection(firestore, "prizes");
+    const snapshot = await getDocs(prizesCol);
+    let prizes = snapshot.docs.map(doc => doc.data());
+    
+    if (prizes.length === 0) {
+      const { setDoc } = await import("firebase/firestore/lite");
+      for (const prize of SEED_PRIZES) {
+        await setDoc(doc(firestore, "prizes", prize.id.toString()), prize);
+      }
+      prizes = SEED_PRIZES;
+    }
+    
+    prizes.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+    res.json(prizes);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /community/prizes (create or update, admin only)
+router.post("/community/prizes", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const { setDoc } = await import("firebase/firestore/lite");
+    const data = req.body;
+    let prizeId = data.id;
+
+    if (!prizeId) {
+      const prizesCol = collection(firestore, "prizes");
+      const snapshot = await getDocs(prizesCol);
+      const existing = snapshot.docs.map(doc => doc.data());
+      prizeId = existing.length > 0 ? Math.max(...existing.map(p => p.id ?? 0)) + 1 : 1;
+    }
+
+    const prizeData = {
+      id: parseInt(prizeId.toString(), 10),
+      name: data.name || "Premio",
+      emoji: data.emoji || "🎁",
+      imageUrl: data.imageUrl || "",
+      fracciones: parseInt(data.fracciones?.toString() || "0", 10),
+      description: data.description || "",
+      color: data.color || "from-amber-500/20 to-yellow-500/10",
+      borderColor: data.borderColor || "border-amber-500/30",
+      accentColor: data.accentColor || "#eab308",
+      isSpecial: !!data.isSpecial,
+      updatedAt: new Date().toISOString()
+    };
+
+    await setDoc(doc(firestore, "prizes", prizeData.id.toString()), prizeData);
+    res.status(200).json(prizeData);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
