@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetDashboardSummary, useGetDashboardActivity } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond } from "lucide-react";
+import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond, Hourglass } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -34,6 +34,42 @@ function getRankProgress(rank: string, totalEarnings: number) {
     needed: Math.max(nextThreshold - totalEarnings, 0),
   };
 }
+
+const HourglassAnimated = ({ color }: { color: string }) => {
+  return (
+    <div 
+      className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.03] border border-white/5 shadow-inner"
+      style={{
+        boxShadow: `inset 0 0 12px ${color}15, 0 0 15px ${color}05`,
+      }}
+    >
+      <style>{`
+        @keyframes hourglass-rotate {
+          0%, 85% { transform: rotate(0deg); }
+          95%, 100% { transform: rotate(180deg); }
+        }
+        @keyframes sand-drip {
+          0% { transform: translateY(-3px) scale(0.5); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: translateY(7px) scale(0.8); opacity: 0; }
+        }
+        .animate-hg-rotate {
+          animation: hourglass-rotate 5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+        }
+        .animate-sand-drip {
+          animation: sand-drip 1.2s linear infinite;
+        }
+      `}</style>
+      <div className="relative animate-hg-rotate">
+        <Hourglass className="w-5.5 h-5.5" style={{ color }} />
+        <span 
+          className="absolute left-1/2 top-[45%] -translate-x-1/2 w-1 h-1 rounded-full animate-sand-drip"
+          style={{ backgroundColor: color }}
+        />
+      </div>
+    </div>
+  );
+};
 
 function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string | null; referralStatus: string }) {
   const computeTimeLeft = () => {
@@ -101,7 +137,7 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
   return (
     <Card className="border relative overflow-hidden backdrop-blur-md bg-white/[0.02]" style={{ borderColor: `${color}30`, boxShadow: `0 0 20px ${glow}` }}>
       <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-15" style={{ background: color, transform: "translate(20%, -20%)" }} />
-      <CardContent className="p-4">
+      <CardContent className="p-4 pr-16 sm:pr-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Estado de Membresía</p>
@@ -152,6 +188,11 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
           </div>
         </div>
       </CardContent>
+      {!timeLeft.expired && referralStatus === "VERDE" && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+          <HourglassAnimated color={color} />
+        </div>
+      )}
     </Card>
   );
 }
