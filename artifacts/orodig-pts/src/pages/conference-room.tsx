@@ -55,6 +55,7 @@ export default function ConferenceRoom() {
   });
 
   const conference = conferences?.find((c) => c.id === confId);
+  const isHost = isAdmin || (currentMember && (currentMember.username === (conference as any)?.hostUsername));
 
   const sendMessageMutation = useUpdateConference({
     mutation: {
@@ -83,7 +84,7 @@ export default function ConferenceRoom() {
   // Local camera stream for Admin
   useEffect(() => {
     let stream: MediaStream | null = null;
-    if (conference?.isLive && isAdmin) {
+    if (conference?.isLive && isHost) {
       navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then(s => {
           stream = s;
@@ -101,7 +102,7 @@ export default function ConferenceRoom() {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [conference?.isLive, isAdmin]);
+  }, [conference?.isLive, isHost]);
 
   const toggleAudio = () => {
     if (localStream) {
@@ -201,7 +202,7 @@ export default function ConferenceRoom() {
         <div className="lg:col-span-2 space-y-4">
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black/80 border border-white/5 shadow-2xl flex items-center justify-center">
             {isLive ? (
-              isAdmin ? (
+              isHost ? (
                 <>
                   <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
                   {/* Admin Controls overlay */}

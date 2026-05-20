@@ -874,6 +874,7 @@ export const ListConferencesResponseItem = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "streamUrl": zod.string(),
+  "hostUsername": zod.string().optional(),
   "isLive": zod.boolean(),
   "scheduledAt": zod.coerce.date().nullish(),
   "endedAt": zod.coerce.date().nullish(),

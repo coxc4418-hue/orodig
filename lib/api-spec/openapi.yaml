@@ -1590,6 +1590,8 @@ components:
           type: string
         streamUrl:
           type: string
+        hostUsername:
+          type: string
         isLive:
           type: boolean
         scheduledAt:

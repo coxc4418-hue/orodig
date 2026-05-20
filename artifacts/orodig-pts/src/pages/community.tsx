@@ -214,6 +214,7 @@ export default function Community() {
   };
 
   const isAdmin = currentMember?.username === "admin";
+  const canStream = isAdmin || (currentMember && (currentMember.referralStatus !== "ROJO" || currentMember.activatedAt !== null || currentMember.rank !== "Bronce"));
 
   return (
     <div className="space-y-6">
@@ -332,7 +333,7 @@ export default function Community() {
 
         {/* CONFERENCES TAB */}
         <TabsContent value="conferences" className="mt-4 space-y-4">
-          {isAdmin && (
+          {canStream && (
             <Card className="bg-card border-white/5 shadow-xl">
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -622,11 +623,11 @@ function PostCard({ post, onDelete, onViewProfile }: { post: any; onDelete: () =
         </p>
 
         {post.imageUrl && (
-          <div className="relative rounded-xl overflow-hidden border border-white/5 max-h-[300px] bg-black/40">
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 w-full aspect-[4/3] sm:aspect-video bg-black/40 group mt-3">
             <img
               src={post.imageUrl}
               alt="Post media"
-              className="w-full h-full object-contain mx-auto"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = "none";
               }}

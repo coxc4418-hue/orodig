@@ -554,6 +554,7 @@ export interface Conference {
   title: string;
   description: string;
   streamUrl: string;
+  hostUsername?: string;
   isLive: boolean;
   /** @nullable */
   scheduledAt?: string | null;

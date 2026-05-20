@@ -302,11 +302,23 @@ const ConferenceUpdateBody = z.object({
   chatMessage: z.object({ memberId: z.number(), username: z.string(), content: z.string() }).optional(),
 });
 
-// POST /community/conferences — create (admin only)
-router.post("/community/conferences", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
+// POST /community/conferences — create
+router.post("/community/conferences", requireAuth, async (_req, res): Promise<void> => {
   const req = _req as AuthRequest;
   const parsed = ConferenceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const memberId = req.memberId!;
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.id, memberId));
+  if (!member) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const isAdmin = member.username === "admin";
+  const hasActivePlan = member.referralStatus !== "ROJO" || member.activatedAt !== null || member.rank !== "Bronce";
+
+  if (!isAdmin && !hasActivePlan) {
+    res.status(403).json({ error: "Debes tener un plan activo para transmitir en vivo." });
+    return;
+  }
 
   const { setDoc } = await import("firebase/firestore/lite");
   const counterRef = doc(firestore, "counters", "conferences");
@@ -321,6 +333,7 @@ router.post("/community/conferences", requireAuth, requireAdmin, async (_req, re
     description: parsed.data.description ?? "",
     streamUrl: parsed.data.streamUrl ?? "",
     isLive: parsed.data.isLive,
+    hostUsername: member.username,
     chatMessages: [],
     scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : null,
     endedAt: null,
@@ -362,7 +375,8 @@ router.patch("/community/conferences/:id", requireAuth, async (req: AuthRequest,
     return;
   }
 
-  if (!isAdmin) { res.status(403).json({ error: "Solo el administrador puede modificar conferencias" }); return; }
+  const isHost = confDoc.data().hostUsername === member.username;
+  if (!isAdmin && !isHost) { res.status(403).json({ error: "Solo el anfitrión o el administrador pueden modificar conferencias" }); return; }
 
   if (parsed.data.title !== undefined) update.title = parsed.data.title;
   if (parsed.data.description !== undefined) update.description = parsed.data.description;
