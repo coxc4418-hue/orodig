@@ -623,7 +623,7 @@ function PostCard({ post, onDelete, onViewProfile }: { post: any; onDelete: () =
         </p>
 
         {post.imageUrl && (
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 w-full aspect-[4/3] sm:aspect-video bg-black/40 group mt-3">
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 w-full h-48 sm:h-64 bg-black/40 group mt-3">
             <img
               src={post.imageUrl}
               alt="Post media"
@@ -660,16 +660,38 @@ function PostCard({ post, onDelete, onViewProfile }: { post: any; onDelete: () =
           </Button>
         </div>
 
-        {/* Comments Section */}
+        {/* Comments List */}
         {showComments && (
           <CommentsSection
             postId={post.id}
-            onAddComment={handleAddComment}
-            commentText={commentText}
-            setCommentText={setCommentText}
             onViewProfile={onViewProfile}
           />
         )}
+
+        {/* Inline Add Comment Form */}
+        <form onSubmit={handleAddComment} className="flex items-center gap-2 pt-3 border-t border-white/5 mt-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center font-black text-black text-xs shrink-0" style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
+            {currentMember?.avatarUrl ? (
+              <img src={currentMember.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              currentMember?.fullName?.charAt(0) || "?"
+            )}
+          </div>
+          <Input
+            placeholder="Escribe un comentario..."
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            className="bg-white/3 border-white/10 text-xs text-white placeholder-muted-foreground rounded-full h-9 flex-1 px-4"
+          />
+          <Button
+            type="submit"
+            disabled={!commentText.trim() || createCommentMutation.isPending}
+            size="sm"
+            className="bg-white/10 hover:bg-white/20 text-white font-bold h-9 rounded-full px-4"
+          >
+            Enviar
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
@@ -679,15 +701,9 @@ function PostCard({ post, onDelete, onViewProfile }: { post: any; onDelete: () =
 
 function CommentsSection({
   postId,
-  onAddComment,
-  commentText,
-  setCommentText,
   onViewProfile,
 }: {
   postId: number;
-  onAddComment: (e: React.FormEvent) => void;
-  commentText: string;
-  setCommentText: (t: string) => void;
   onViewProfile: (id: number) => void;
 }) {
   const { currentMember } = useAuth();
@@ -765,24 +781,6 @@ function CommentsSection({
       ) : (
         <p className="text-xs text-muted-foreground text-center py-2">Sin comentarios. Sé el primero.</p>
       )}
-
-      {/* Add Comment Form */}
-      <form onSubmit={onAddComment} className="flex gap-2">
-        <Input
-          placeholder="Escribe un comentario..."
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          className="bg-white/3 border-white/10 text-xs text-white placeholder-muted-foreground rounded-lg h-9 flex-1"
-        />
-        <Button
-          type="submit"
-          disabled={!commentText.trim()}
-          size="sm"
-          className="bg-white/10 hover:bg-white/20 text-white font-bold h-9"
-        >
-          Enviar
-        </Button>
-      </form>
     </div>
   );
 }
