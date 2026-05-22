@@ -164,7 +164,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 className="w-4 h-4 shrink-0"
                 style={{ color: neon, filter: `drop-shadow(0 0 4px ${neon})` }}
               />
-              <span className="flex-1 uppercase text-[11px]">{item.label}</span>
+              <span className="flex-1 min-w-0 uppercase text-[11px] truncate">{item.label}</span>
               {isActive && <ChevronRight className="w-3 h-3" style={{ color: neon }} />}
             </Link>
           );
@@ -187,7 +187,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground dark">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-white/5 bg-card overflow-hidden">
+      <aside className="hidden md:flex flex-col w-60 min-w-[15rem] max-w-[15rem] shrink-0 border-r border-white/5 bg-card overflow-hidden z-20">
         <SidebarInner />
       </aside>
 
@@ -229,7 +229,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative z-0 isolate">
         <div className="pointer-events-none fixed inset-0 z-[-1]"
           style={{ background: "radial-gradient(circle at top right, hsl(42 68% 50% / 0.03), transparent 40%), radial-gradient(circle at bottom left, hsl(273 100% 50% / 0.03), transparent 40%)" }}
         />

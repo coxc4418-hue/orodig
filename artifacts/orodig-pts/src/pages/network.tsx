@@ -918,7 +918,7 @@ export default function Network() {
                   desc: "Vincular personas de forma infinita hacia la derecha o izquierda bajo tu código directo de patrocinio."
                 },
                 {
-                  icon: Network,
+                  icon: NetworkIcon,
                   color: "text-emerald-400",
                   title: "Residual hasta Nivel 50",
                   desc: "Gana de todas las recompras y suscripciones mensuales de las personas que estén activas en tu descendencia hasta el nivel 50."
