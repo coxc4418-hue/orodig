@@ -98,8 +98,8 @@ export default function Community() {
       const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 1000;
-        const MAX_HEIGHT = 800;
+        const MAX_WIDTH = 720;
+        const MAX_HEIGHT = 720;
         let width = img.width;
         let height = img.height;
 
@@ -120,11 +120,11 @@ export default function Community() {
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.55);
           uploadPostImage(dataUrl)
             .then((url) => setPostImageUrl(url))
             .catch((err: Error) => {
-              toast({ title: "Error al subir", description: err.message, variant: "destructive" });
+              toast({ title: "Imagen", description: err.message, variant: "destructive" });
             });
         }
       };

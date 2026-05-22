@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { z } from "zod";
-import { uploadCommunityImage } from "../lib/storage";
+import { prepareCommunityImage, assertPostImageUrl } from "../lib/communityImage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const {
@@ -34,7 +34,7 @@ async function getMemberMini(id: number) {
   return { id: m.id, username: m.username, fullName: m.fullName, avatarUrl: m.avatarUrl ?? null, rank: m.rank };
 }
 
-// POST /community/upload-image — sube imagen a Firebase Storage (no base64 en Firestore)
+// POST /community/upload-image — valida y devuelve data URL para Firestore (gratis, sin Storage)
 const UploadImageBody = z.object({
   image: z.string().min(1),
   mimeType: z.string().optional(),
@@ -47,7 +47,7 @@ router.post("/community/upload-image", requireAuth, async (req: AuthRequest, res
     return;
   }
   try {
-    const url = await uploadCommunityImage(req.memberId!, parsed.data.image, parsed.data.mimeType);
+    const url = prepareCommunityImage(parsed.data.image, parsed.data.mimeType);
     res.json({ url });
   } catch (err: any) {
     res.status(400).json({ error: err.message || "Error al subir imagen" });
@@ -101,13 +101,21 @@ router.post("/community/posts", requireAuth, async (req: AuthRequest, res): Prom
   const nextId = counterDoc.exists() ? (counterDoc.data().current ?? 0) + 1 : 1;
   await setDoc(postCounterRef, { current: nextId });
 
+  let imageUrl: string | null = null;
+  try {
+    imageUrl = assertPostImageUrl(parsed.data.imageUrl ?? null);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || "Imagen inválida" });
+    return;
+  }
+
   const postRef = doc(firestore, "posts", nextId.toString());
   const now = new Date();
   const postData = {
     id: nextId,
     memberId,
     content: parsed.data.content,
-    imageUrl: parsed.data.imageUrl ?? null,
+    imageUrl,
     likesCount: 0,
     likedBy: [],
     commentsCount: 0,
