@@ -37,6 +37,7 @@ import { es } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
+import { getApiBase } from "@/lib/api";
 
 const METODO_LABELS: Record<string, string> = {
   crypto_usdt:    "USDT (TRC20)",
@@ -78,7 +79,7 @@ export default function Admin() {
   const { data: prizes, refetch: refetchPrizes } = useQuery<any[]>({
     queryKey: ["/api/community/prizes"],
     queryFn: async () => {
-      const res = await fetch("/api/community/prizes");
+      const res = await fetch(`${getApiBase()}/api/community/prizes`);
       if (!res.ok) throw new Error("Error loading prizes");
       return res.json();
     }
@@ -86,7 +87,7 @@ export default function Admin() {
 
   const savePrizeMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/community/prizes", {
+      const res = await fetch(`${getApiBase()}/api/community/prizes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -115,7 +116,7 @@ export default function Admin() {
 
   const deletePrizeMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/community/prizes/${id}`, {
+      const res = await fetch(`${getApiBase()}/api/community/prizes/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });

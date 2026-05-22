@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Star, Plane, Home, Car, Bike } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { getApiBase } from "@/lib/api";
 
 const GOLD = "hsl(42,68%,50%)";
 
@@ -29,7 +30,7 @@ export default function Premios() {
   const { data: prizes, isLoading } = useQuery<any[]>({
     queryKey: ["/api/community/prizes"],
     queryFn: async () => {
-      const res = await fetch("/api/community/prizes");
+      const res = await fetch(`${getApiBase()}/api/community/prizes`);
       if (!res.ok) throw new Error("Error al obtener premios");
       return res.json();
     }
