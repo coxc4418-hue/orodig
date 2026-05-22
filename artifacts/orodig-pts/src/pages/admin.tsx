@@ -113,6 +113,21 @@ export default function Admin() {
     }
   });
 
+  const deletePrizeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/community/prizes/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Error deleting prize");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchPrizes();
+      qc.invalidateQueries({ queryKey: ["/api/community/prizes"] });
+    }
+  });
+
   useEffect(() => {
     if (currentMember && currentMember.username !== "admin") {
       setLocation("/dashboard");
@@ -1079,6 +1094,19 @@ export default function Admin() {
                       }}
                     >
                       <Edit className="w-3.5 h-3.5 mr-1" /> Editar Premio
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 shrink-0 hover:bg-red-500/10 text-muted-foreground hover:text-red-400"
+                      onClick={() => {
+                        if (confirm(`¿Estás seguro de que deseas eliminar el premio "${prize.name}"? Esta acción no se puede deshacer.`)) {
+                          deletePrizeMutation.mutate(prize.id);
+                        }
+                      }}
+                      disabled={deletePrizeMutation.isPending}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1 text-red-500" /> Eliminar
                     </Button>
                   </div>
                 </CardContent>

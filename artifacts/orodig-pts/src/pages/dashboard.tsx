@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetDashboardSummary, useGetDashboardActivity } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond, Hourglass } from "lucide-react";
+import { DollarSign, Users, Award, Zap, Activity, Copy, TrendingUp, ChevronRight, Gift, Layers, Diamond } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,36 +37,188 @@ function getRankProgress(rank: string, totalEarnings: number) {
 
 const HourglassAnimated = ({ color }: { color: string }) => {
   return (
-    <div 
-      className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.03] border border-white/5 shadow-inner"
-      style={{
-        boxShadow: `inset 0 0 12px ${color}15, 0 0 15px ${color}05`,
-      }}
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 52, height: 62 }}
     >
       <style>{`
-        @keyframes hourglass-rotate {
-          0%, 85% { transform: rotate(0deg); }
-          95%, 100% { transform: rotate(180deg); }
+        @keyframes hg-sand-stream {
+          0% { transform: translateY(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(14px); opacity: 0; }
         }
-        @keyframes sand-drip {
-          0% { transform: translateY(-3px) scale(0.5); opacity: 0; }
-          50% { opacity: 1; }
-          100% { transform: translateY(7px) scale(0.8); opacity: 0; }
+        @keyframes hg-sand-top-drain {
+          0% { transform: scaleY(1); }
+          100% { transform: scaleY(0.15); }
         }
-        .animate-hg-rotate {
-          animation: hourglass-rotate 5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+        @keyframes hg-sand-bottom-fill {
+          0% { transform: scaleY(0.15); }
+          100% { transform: scaleY(1); }
         }
-        .animate-sand-drip {
-          animation: sand-drip 1.2s linear infinite;
+        @keyframes hg-particle-fall {
+          0% { transform: translate(0, 0) scale(1); opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 0.8; }
+          100% { transform: translate(var(--px), 16px) scale(0.5); opacity: 0; }
         }
+        @keyframes hg-glass-shine {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
+        @keyframes hg-subtle-rotate {
+          0%, 90% { transform: rotate(0deg); }
+          95% { transform: rotate(3deg); }
+          100% { transform: rotate(0deg); }
+        }
+        .hg-stream-1 { animation: hg-sand-stream 0.8s linear infinite; }
+        .hg-stream-2 { animation: hg-sand-stream 0.8s linear 0.27s infinite; }
+        .hg-stream-3 { animation: hg-sand-stream 0.8s linear 0.54s infinite; }
+        .hg-top-sand { animation: hg-sand-top-drain 20s linear infinite; transform-origin: bottom center; }
+        .hg-bottom-sand { animation: hg-sand-bottom-fill 20s linear infinite; transform-origin: bottom center; }
+        .hg-shine { animation: hg-glass-shine 4s ease-in-out infinite; }
+        .hg-body { animation: hg-subtle-rotate 12s ease-in-out infinite; }
+        .hg-p1 { animation: hg-particle-fall 1.2s linear 0.1s infinite; --px: 2px; }
+        .hg-p2 { animation: hg-particle-fall 1.1s linear 0.4s infinite; --px: -1.5px; }
+        .hg-p3 { animation: hg-particle-fall 1.3s linear 0.7s infinite; --px: 1px; }
+        .hg-p4 { animation: hg-particle-fall 1.0s linear 0.2s infinite; --px: -2px; }
       `}</style>
-      <div className="relative animate-hg-rotate">
-        <Hourglass className="w-5.5 h-5.5" style={{ color }} />
-        <span 
-          className="absolute left-1/2 top-[45%] -translate-x-1/2 w-1 h-1 rounded-full animate-sand-drip"
-          style={{ backgroundColor: color }}
+      <svg
+        viewBox="0 0 52 62"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full hg-body"
+        style={{ filter: `drop-shadow(0 0 8px ${color}30)` }}
+      >
+        <defs>
+          {/* Glass gradient */}
+          <linearGradient id="hgGlass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.12)" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.04)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.08)" />
+          </linearGradient>
+          {/* Frame gradient */}
+          <linearGradient id="hgFrame" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.9" />
+            <stop offset="50%" stopColor={color} stopOpacity="0.6" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.9" />
+          </linearGradient>
+          {/* Sand color */}
+          <linearGradient id="hgSand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.7" />
+          </linearGradient>
+          {/* Clip for glass shape - top bulb */}
+          <clipPath id="hgTopBulb">
+            <path d="M16 14 C16 14, 16 26, 26 30 C36 26, 36 14, 36 14 Z" />
+          </clipPath>
+          {/* Clip for glass shape - bottom bulb */}
+          <clipPath id="hgBottomBulb">
+            <path d="M16 48 C16 48, 16 36, 26 32 C36 36, 36 48, 36 48 Z" />
+          </clipPath>
+        </defs>
+
+        {/* === FRAME - Top cap === */}
+        <rect x="10" y="6" width="32" height="4" rx="2" fill="url(#hgFrame)" />
+        <rect x="12" y="4" width="28" height="2.5" rx="1.2" fill={color} opacity="0.4" />
+        {/* Top cap detail lines */}
+        <line x1="14" y1="7" x2="38" y2="7" stroke={color} strokeWidth="0.5" opacity="0.3" />
+        <line x1="13" y1="9" x2="39" y2="9" stroke={color} strokeWidth="0.3" opacity="0.2" />
+        
+        {/* Ornamental top knobs */}
+        <circle cx="12" cy="8" r="1.5" fill={color} opacity="0.5" />
+        <circle cx="40" cy="8" r="1.5" fill={color} opacity="0.5" />
+
+        {/* === GLASS BODY — Top bulb === */}
+        <path
+          d="M14 10 C14 10, 12 14, 12 20 C12 26, 22 31, 26 31 C30 31, 40 26, 40 20 C40 14, 38 10, 38 10"
+          fill="url(#hgGlass)"
+          stroke={color}
+          strokeWidth="0.7"
+          opacity="0.6"
         />
-      </div>
+        {/* Glass reflection on top bulb */}
+        <path
+          d="M18 13 C18 13, 17 17, 17 20 C17 23, 20 26, 22 27"
+          fill="none"
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth="1"
+          strokeLinecap="round"
+          className="hg-shine"
+        />
+
+        {/* Sand in top bulb (draining) */}
+        <g clipPath="url(#hgTopBulb)">
+          <ellipse cx="26" cy="27" rx="9" ry="8" fill="url(#hgSand)" className="hg-top-sand" opacity="0.8" />
+        </g>
+
+        {/* === NECK / Waist === */}
+        <path
+          d="M22 29 C24 31, 24 31, 26 31 C28 31, 28 31, 30 29"
+          fill="none"
+          stroke={color}
+          strokeWidth="0.5"
+          opacity="0.4"
+        />
+
+        {/* === Sand Stream (falling particles) === */}
+        <line x1="26" y1="29" x2="26" y2="33" stroke={color} strokeWidth="1.2" opacity="0.7" className="hg-stream-1" />
+        <line x1="26" y1="29" x2="26" y2="33" stroke={color} strokeWidth="0.8" opacity="0.5" className="hg-stream-2" />
+        <line x1="26" y1="29" x2="26" y2="33" stroke={color} strokeWidth="0.6" opacity="0.4" className="hg-stream-3" />
+        
+        {/* Tiny sand particles falling */}
+        <circle cx="25.5" cy="30" r="0.6" fill={color} opacity="0.8" className="hg-p1" />
+        <circle cx="26.5" cy="30" r="0.5" fill={color} opacity="0.6" className="hg-p2" />
+        <circle cx="26" cy="29.5" r="0.4" fill={color} opacity="0.7" className="hg-p3" />
+        <circle cx="25.8" cy="30.5" r="0.5" fill={color} opacity="0.5" className="hg-p4" />
+
+        {/* === GLASS BODY — Bottom bulb === */}
+        <path
+          d="M14 52 C14 52, 12 48, 12 42 C12 36, 22 31, 26 31 C30 31, 40 36, 40 42 C40 48, 38 52, 38 52"
+          fill="url(#hgGlass)"
+          stroke={color}
+          strokeWidth="0.7"
+          opacity="0.6"
+        />
+        {/* Glass reflection on bottom bulb */}
+        <path
+          d="M18 49 C18 49, 17 45, 17 42 C17 39, 20 36, 22 35"
+          fill="none"
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth="0.8"
+          strokeLinecap="round"
+          className="hg-shine"
+        />
+
+        {/* Sand in bottom bulb (filling) */}
+        <g clipPath="url(#hgBottomBulb)">
+          <ellipse cx="26" cy="46" rx="9" ry="6" fill="url(#hgSand)" className="hg-bottom-sand" opacity="0.85" />
+          {/* Sand pile peak */}
+          <path d="M23 40 L26 36 L29 40" fill={color} opacity="0.5" className="hg-bottom-sand" />
+        </g>
+
+        {/* === FRAME — Bottom cap === */}
+        <rect x="10" y="52" width="32" height="4" rx="2" fill="url(#hgFrame)" />
+        <rect x="12" y="55.5" width="28" height="2.5" rx="1.2" fill={color} opacity="0.4" />
+        {/* Bottom cap detail lines */}
+        <line x1="14" y1="53" x2="38" y2="53" stroke={color} strokeWidth="0.5" opacity="0.3" />
+        <line x1="13" y1="55" x2="39" y2="55" stroke={color} strokeWidth="0.3" opacity="0.2" />
+
+        {/* Ornamental bottom knobs */}
+        <circle cx="12" cy="54" r="1.5" fill={color} opacity="0.5" />
+        <circle cx="40" cy="54" r="1.5" fill={color} opacity="0.5" />
+
+        {/* === Side pillars === */}
+        <rect x="13" y="10" width="1.8" height="42" rx="0.9" fill={color} opacity="0.25" />
+        <rect x="37.2" y="10" width="1.8" height="42" rx="0.9" fill={color} opacity="0.25" />
+        {/* Pillar detail */}
+        <rect x="13.3" y="10" width="0.6" height="42" rx="0.3" fill="rgba(255,255,255,0.1)" />
+        <rect x="37.5" y="10" width="0.6" height="42" rx="0.3" fill="rgba(255,255,255,0.1)" />
+
+        {/* === Overall glass sheen overlay === */}
+        <ellipse cx="20" cy="20" rx="4" ry="6" fill="rgba(255,255,255,0.06)" className="hg-shine" />
+        <ellipse cx="20" cy="42" rx="4" ry="5" fill="rgba(255,255,255,0.04)" className="hg-shine" />
+      </svg>
     </div>
   );
 };
@@ -137,7 +289,7 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
   return (
     <Card className="border relative overflow-hidden backdrop-blur-md bg-white/[0.02]" style={{ borderColor: `${color}30`, boxShadow: `0 0 20px ${glow}` }}>
       <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-15" style={{ background: color, transform: "translate(20%, -20%)" }} />
-      <CardContent className="p-4 pr-16 sm:pr-20">
+      <CardContent className="p-4 pr-20 sm:pr-24">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Estado de Membresía</p>
@@ -189,7 +341,7 @@ function MembershipCountdown({ expiresAt, referralStatus }: { expiresAt: string 
         </div>
       </CardContent>
       {!timeLeft.expired && referralStatus === "VERDE" && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center opacity-90">
           <HourglassAnimated color={color} />
         </div>
       )}

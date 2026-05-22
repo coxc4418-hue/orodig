@@ -519,4 +519,19 @@ router.post("/community/prizes", requireAuth, requireAdmin, async (req, res): Pr
   }
 });
 
+// DELETE /community/prizes/:id (admin only)
+router.delete("/community/prizes/:id", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
+  try {
+    const id = parseInt((_req as any).params.id, 10);
+    const { deleteDoc } = await import("firebase/firestore/lite");
+    const prizeRef = doc(firestore, "prizes", id.toString());
+    const prizeDoc = await getDoc(prizeRef);
+    if (!prizeDoc.exists()) { res.status(404).json({ error: "Premio no encontrado" }); return; }
+    await deleteDoc(prizeRef);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
