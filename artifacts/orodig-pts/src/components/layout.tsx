@@ -138,7 +138,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto scrollbar-none">
         <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-2 mb-2">Menú</div>
         {navItems.map((item) => {
           const isActive = location === item.href;
@@ -187,7 +187,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground dark">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-white/5 bg-card">
+      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-white/5 bg-card overflow-hidden">
         <SidebarInner />
       </aside>
 
@@ -229,7 +229,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto relative">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative">
         <div className="pointer-events-none fixed inset-0 z-[-1]"
           style={{ background: "radial-gradient(circle at top right, hsl(42 68% 50% / 0.03), transparent 40%), radial-gradient(circle at bottom left, hsl(273 100% 50% / 0.03), transparent 40%)" }}
         />

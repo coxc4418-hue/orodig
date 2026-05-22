@@ -49,7 +49,11 @@ type NetworkNode = {
 };
 
 type Tab = "Árbol Genealógico" | "Miembros por Nivel" | "Simulador y Reglas";
-const TABS: Tab[] = ["Árbol Genealógico", "Miembros por Nivel", "Simulador y Reglas"];
+const TABS: { id: Tab; label: string }[] = [
+  { id: "Árbol Genealógico", label: "Árbol" },
+  { id: "Miembros por Nivel", label: "Por Nivel" },
+  { id: "Simulador y Reglas", label: "Simulador" },
+];
 
 // Helper component for rendering recursive nodes in the genealogy tree
 function TreeNodeCard({ 
@@ -375,22 +379,21 @@ export default function Network() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-white/3 border border-white/5">
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-white/3 border border-white/5">
         {TABS.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              activeTab === tab ? "text-black" : "text-muted-foreground hover:text-foreground"
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`py-2.5 px-2 rounded-lg text-xs sm:text-sm font-bold transition-all truncate ${
+              activeTab === tab.id ? "text-black" : "text-muted-foreground hover:text-foreground"
             }`}
-            style={activeTab === tab ? { background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` } : {}}
+            style={activeTab === tab.id ? { background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))` } : {}}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
-
-      <div key={activeTab} className="w-full min-w-0 isolate">
 
       {/* Tab: Árbol Genealógico */}
       {activeTab === "Árbol Genealógico" && (
@@ -491,7 +494,7 @@ export default function Network() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="w-full max-w-full overflow-x-auto overflow-y-auto max-h-[min(70vh,560px)] bg-black/20">
+                <div className="w-full max-w-full overflow-x-auto overflow-y-auto max-h-[min(70vh,560px)] bg-black/20 scrollbar-none">
                   <div className="inline-flex justify-center items-start p-6 min-w-full">
                     <div
                       className="origin-top transition-transform duration-150"
@@ -804,12 +807,12 @@ export default function Network() {
         </div>
       )}
 
-      {/* Tab: Simulador y Reglas */}
+      {/* Tab: Simulador y Reglas — una columna para evitar barra/scroll en el centro */}
       {activeTab === "Simulador y Reglas" && (
-        <div className="flex flex-col lg:flex-row gap-6 w-full min-w-0 items-stretch">
+        <div className="w-full max-w-4xl mx-auto space-y-6">
           
           {/* Simulator Calculator Card */}
-          <Card className="bg-card border-white/5 flex-1 min-w-0 lg:max-w-[50%]">
+          <Card className="bg-card border-white/5 w-full">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: GOLD }} />
@@ -897,7 +900,7 @@ export default function Network() {
           </Card>
 
           {/* Compensation Plan Rules Card */}
-          <Card className="bg-card border-white/5 flex-1 min-w-0 lg:max-w-[50%]">
+          <Card className="bg-card border-white/5 w-full">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Award className="w-4 h-4" style={{ color: GOLD }} />
@@ -955,8 +958,6 @@ export default function Network() {
 
         </div>
       )}
-
-      </div>
 
     </div>
   );
