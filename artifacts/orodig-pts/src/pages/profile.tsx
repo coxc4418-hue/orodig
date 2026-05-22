@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RankBadge } from "@/components/layout";
-import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package, Camera, ImagePlus } from "lucide-react";
+import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package, Camera, ImagePlus, Trophy, Gift } from "lucide-react";
+import { useMemo } from "react";
 import { compressImageFile } from "@/lib/compressImage";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-import { useLogout, useUpdateProfile, useListPurchases, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useLogout, useUpdateProfile, useListPurchases, useListPrizes, useListQuincenalWinners, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getApiBase } from "@/lib/api";
@@ -23,7 +24,7 @@ const RANK_LIST = [
 ];
 const RANK_THRESHOLDS_LIST: number[] = [50, 150, 350, 700, 1200, 2500, 5000, 9000, 15000, 23000, 33000, 48000, 70000, 100000, Infinity];
 
-const TABS = ["Perfil", "Compras"] as const;
+const TABS = ["Perfil", "Premios", "Compras"] as const;
 type Tab = typeof TABS[number];
 
 export default function Profile() {
@@ -33,6 +34,23 @@ export default function Profile() {
   const logoutMutation = useLogout();
   const { data: summary } = useGetDashboardSummary();
   const { data: purchases } = useListPurchases();
+  const { data: prizesCatalog, isLoading: loadingPrizes } = useListPrizes();
+  const { data: quincenalWinners } = useListQuincenalWinners();
+
+  const userPoints = currentMember ? Number(currentMember.points) : 0;
+
+  const wonPrizes = useMemo(() => {
+    if (!prizesCatalog) return [];
+    return prizesCatalog.filter(
+      (p) => !p.isSpecial && p.fracciones > 0 && userPoints >= p.fracciones,
+    );
+  }, [prizesCatalog, userPoints]);
+
+  const wonQuincenal = useMemo(() => {
+    if (!quincenalWinners || !currentMember) return [];
+    const name = currentMember.fullName.toLowerCase().trim();
+    return quincenalWinners.filter((w) => w.name.toLowerCase().trim() === name);
+  }, [quincenalWinners, currentMember]);
   const renewMembership = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("orodig_token");
@@ -406,6 +424,116 @@ export default function Profile() {
       )}
 
 
+
+      {/* PREMIOS TAB */}
+      {activeTab === "Premios" && (
+        <div className="space-y-4">
+          <Card className="border border-white/5" style={{ background: "linear-gradient(135deg, hsl(42,68%,10%), hsl(42,68%,6%))" }}>
+            <CardContent className="p-4 flex flex-wrap items-center gap-4">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tus fracciones</p>
+                <p className="text-2xl font-black" style={{ color: GOLD }}>{userPoints.toLocaleString("es-CO")}</p>
+              </div>
+              <div className="h-10 w-px bg-white/10 hidden sm:block" />
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Premios ganados</p>
+                <p className="text-2xl font-black text-white">{wonPrizes.length + wonQuincenal.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {loadingPrizes ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[1, 2].map((n) => (
+                <Card key={n} className="h-32 bg-white/5 animate-pulse border-white/5" />
+              ))}
+            </div>
+          ) : wonPrizes.length === 0 && wonQuincenal.length === 0 ? (
+            <Card className="bg-card border-white/5">
+              <CardContent className="py-14 text-center">
+                <Gift className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="text-sm font-bold text-white">Aún no tienes premios registrados</p>
+                <p className="text-xs text-muted-foreground mt-2 max-w-sm mx-auto">
+                  Sigue acumulando fracciones con tu red activa. Cuando alcances una meta, aparecerá aquí automáticamente.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {wonPrizes.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Trophy className="w-4 h-4" style={{ color: GOLD }} />
+                    Metas alcanzadas
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {wonPrizes.map((prize) => (
+                      <Card
+                        key={prize.id}
+                        className={`overflow-hidden border bg-gradient-to-br ${prize.color || "from-amber-500/10 to-yellow-500/5"} ${prize.borderColor || "border-white/10"}`}
+                      >
+                        {prize.imageUrl ? (
+                          <div className="h-28 overflow-hidden">
+                            <img src={prize.imageUrl} alt={prize.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : null}
+                        <CardContent className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-2xl shrink-0">{prize.emoji}</span>
+                              <div className="min-w-0">
+                                <p className="font-black text-white text-sm truncate">{prize.name}</p>
+                                <p className="text-[10px] font-bold" style={{ color: prize.accentColor }}>
+                                  Meta cumplida · {prize.fracciones.toLocaleString("es-CO")} fracciones
+                                </p>
+                              </div>
+                            </div>
+                            <Badge className="text-[9px] font-black shrink-0" style={{ background: prize.accentColor, color: "#000" }}>
+                              GANADO
+                            </Badge>
+                          </div>
+                          {prize.description ? (
+                            <p className="text-[11px] text-muted-foreground line-clamp-2">{prize.description}</p>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {wonQuincenal.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Star className="w-4 h-4" style={{ color: GOLD }} />
+                    Bono quincenal
+                  </h3>
+                  <div className="space-y-2">
+                    {wonQuincenal.map((w, i) => (
+                      <Card
+                        key={`${w.week}-${i}`}
+                        className="border"
+                        style={{ borderColor: "hsl(42 68% 50% / 0.2)", background: "hsl(42 68% 50% / 0.06)" }}
+                      >
+                        <CardContent className="p-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{w.week}</p>
+                            <p className="text-sm font-bold text-white">Bono quincenal por tarea</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-black" style={{ color: GOLD }}>${w.amount}</p>
+                            <p className="text-[10px] text-muted-foreground">USD</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* COMPRAS TAB */}
       {activeTab === "Compras" && (

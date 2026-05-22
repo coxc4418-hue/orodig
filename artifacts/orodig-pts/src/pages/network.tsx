@@ -806,10 +806,10 @@ export default function Network() {
 
       {/* Tab: Simulador y Reglas */}
       {activeTab === "Simulador y Reglas" && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 w-full min-w-0 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 w-full min-w-0 items-stretch">
           
           {/* Simulator Calculator Card */}
-          <Card className="bg-card border-white/5 w-full min-w-0">
+          <Card className="bg-card border-white/5 flex-1 min-w-0 lg:max-w-[50%]">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: GOLD }} />
@@ -857,27 +857,21 @@ export default function Network() {
               {/* Simulation Result Details */}
               <div className="space-y-2">
                 <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">Desglose de Crecimiento</h4>
-                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                <div className="space-y-2">
                   {simResults.map((res) => (
                     <div
                       key={res.level}
-                      className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 rounded-lg border border-white/5 bg-white/[0.02] text-xs"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-white/5 bg-white/[0.02] text-xs"
                     >
-                      <div>
-                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Nivel</div>
-                        <div className="font-black text-white mt-0.5">{res.level}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Nuevos</div>
-                        <div className="font-semibold text-white mt-0.5">{res.count.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Acumulado</div>
-                        <div className="font-bold text-white mt-0.5">{res.total.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase text-emerald-400 font-bold">Residual</div>
-                        <div className="font-bold text-emerald-400 mt-0.5">${res.commission.toLocaleString()}</div>
+                      <span className="font-black text-white shrink-0">Nivel {res.level}</span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 sm:justify-end">
+                        <span className="text-muted-foreground">
+                          <span className="text-white font-semibold">{res.count.toLocaleString()}</span> nuevos
+                        </span>
+                        <span className="text-muted-foreground">
+                          Total <span className="text-white font-bold">{res.total.toLocaleString()}</span>
+                        </span>
+                        <span className="font-bold text-emerald-400">${res.commission.toLocaleString()} USD</span>
                       </div>
                     </div>
                   ))}
@@ -903,7 +897,7 @@ export default function Network() {
           </Card>
 
           {/* Compensation Plan Rules Card */}
-          <Card className="bg-card border-white/5 w-full min-w-0">
+          <Card className="bg-card border-white/5 flex-1 min-w-0 lg:max-w-[50%]">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Award className="w-4 h-4" style={{ color: GOLD }} />
