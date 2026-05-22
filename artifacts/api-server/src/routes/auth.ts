@@ -10,6 +10,7 @@ import { logger } from "../lib/logger";
 import { addEarning, checkAndUpgradeRank } from "../lib/rankHelper";
 import { checkAndBypassInactiveSponsors } from "../lib/bypassHelper";
 import { computeReferralStatus } from "../lib/membership";
+import { prepareAvatarImage, prepareCoverImage } from "../lib/profileImage";
 import { z } from "zod";
 
 const router: IRouter = Router();
@@ -37,6 +38,7 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
     sponsorId: m.sponsorId,
     sponsorName: sponsorName ?? null,
     avatarUrl: m.avatarUrl,
+    coverUrl: m.coverUrl ?? null,
     lastPaymentAt: m.lastPaymentAt ? m.lastPaymentAt.toISOString() : null,
     referralStatus: computeReferralStatus(m.referralStatus, m.expiresAt),
     activatedAt: m.activatedAt ? m.activatedAt.toISOString() : null,
@@ -195,6 +197,7 @@ const UpdateProfileBody = z.object({
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6).optional(),
   avatarUrl: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
 });
 
 router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<void> => {
@@ -203,7 +206,7 @@ router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<voi
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { fullName, email, phone, currentPassword, newPassword, avatarUrl } = parsed.data;
+  const { fullName, email, phone, currentPassword, newPassword, avatarUrl, coverUrl } = parsed.data;
 
   const [member] = await db.select().from(membersTable).where(eq(membersTable.id, req.memberId!));
   if (!member) {
@@ -215,7 +218,22 @@ router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<voi
   if (fullName) updates.fullName = fullName;
   if (email) updates.email = email;
   if (phone !== undefined) updates.phone = phone;
-  if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+  if (avatarUrl !== undefined) {
+    try {
+      updates.avatarUrl = avatarUrl ? prepareAvatarImage(avatarUrl) : null;
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+  }
+  if (coverUrl !== undefined) {
+    try {
+      updates.coverUrl = coverUrl ? prepareCoverImage(coverUrl) : null;
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+  }
 
 
   if (newPassword) {

@@ -1067,6 +1067,8 @@ components:
           minLength: 6
         avatarUrl:
           type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
 
 
     AuthResponse:
@@ -1114,6 +1116,8 @@ components:
         sponsorName:
           type: ["string", "null"]
         avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
           type: ["string", "null"]
         lastPaymentAt:
           type: ["string", "null"]
@@ -1669,6 +1673,8 @@ components:
         fullName:
           type: string
         avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
           type: ["string", "null"]
         rank:
           type: string

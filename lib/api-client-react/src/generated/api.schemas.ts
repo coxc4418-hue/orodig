@@ -37,6 +37,8 @@ export interface UpdateProfileInput {
   newPassword?: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
 }
 
 export type MemberRank = typeof MemberRank[keyof typeof MemberRank];
@@ -92,6 +94,8 @@ export interface Member {
   sponsorName?: string | null;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
   /** @nullable */
   lastPaymentAt?: string | null;
   referralStatus?: MemberReferralStatus;
@@ -529,6 +533,8 @@ export interface SocialProfile {
   fullName: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
   rank: string;
   totalEarnings?: number;
   directReferrals?: number;

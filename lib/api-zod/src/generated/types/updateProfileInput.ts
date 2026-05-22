@@ -16,4 +16,6 @@ export interface UpdateProfileInput {
   newPassword?: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
 }

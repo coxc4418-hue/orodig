@@ -12,6 +12,8 @@ export interface SocialProfile {
   fullName: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
   rank: string;
   totalEarnings?: number;
   directReferrals?: number;

@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RankBadge } from "@/components/layout";
-import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package, Camera } from "lucide-react";
+import { Mail, Phone, Calendar, Copy, LogOut, User, Star, TrendingUp, Shield, Edit2, Save, X, ShoppingBag, Package, Camera, ImagePlus } from "lucide-react";
+import { compressImageFile } from "@/lib/compressImage";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -80,53 +81,36 @@ export default function Profile() {
     newPassword: "",
   });
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
+    try {
+      const dataUrl = await compressImageFile(file, { maxWidth: 400, maxHeight: 400, quality: 0.75 });
+      updateProfile.mutate({ data: { avatarUrl: dataUrl } });
+    } catch (err: unknown) {
       toast({
-        title: "Archivo demasiado grande",
-        description: "Por favor elige una imagen de menos de 10MB.",
-        variant: "destructive"
+        title: "Foto de perfil",
+        description: err instanceof Error ? err.message : "Error al procesar imagen",
+        variant: "destructive",
       });
-      return;
     }
+    e.target.value = "";
+  };
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 300;
-        const MAX_HEIGHT = 300;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
-          updateProfile.mutate({ data: { avatarUrl: dataUrl } });
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await compressImageFile(file, { maxWidth: 1200, maxHeight: 400, quality: 0.7 });
+      updateProfile.mutate({ data: { coverUrl: dataUrl } });
+    } catch (err: unknown) {
+      toast({
+        title: "Foto de portada",
+        description: err instanceof Error ? err.message : "Error al procesar imagen",
+        variant: "destructive",
+      });
+    }
+    e.target.value = "";
   };
 
   if (!currentMember) return null;
@@ -173,39 +157,21 @@ export default function Profile() {
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-card border-white/5 text-center py-6">
-            <CardContent className="px-4 flex flex-col items-center gap-3">
-              <div className="relative group">
-                <input
-                  type="file"
-                  id="admin-avatar-upload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
-                <label htmlFor="admin-avatar-upload" className="cursor-pointer block relative">
-                  {currentMember.avatarUrl ? (
-                    <img src={currentMember.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border border-white/10 hover:brightness-75 transition-all" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black hover:brightness-75 transition-all"
-                      style={{ background: `linear-gradient(135deg, hsl(273,100%,40%), hsl(273,100%,60%))` }}>
-                      {currentMember.fullName.charAt(0)}
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="w-5 h-5 text-white" />
-                  </div>
-                </label>
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
-                <p className="text-muted-foreground text-xs mb-2">@{currentMember.username}</p>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border border-purple-500/30 bg-purple-500/10 text-purple-300">
-                  Administrador General
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <ProfilePhotosCard
+            prefix="admin"
+            fullName={currentMember.fullName}
+            username={currentMember.username}
+            avatarUrl={currentMember.avatarUrl}
+            coverUrl={currentMember.coverUrl ?? null}
+            accent="purple"
+            onAvatarChange={handleAvatarUpload}
+            onCoverChange={handleCoverUpload}
+            badge={
+              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border border-purple-500/30 bg-purple-500/10 text-purple-300">
+                Administrador General
+              </Badge>
+            }
+          />
 
           <Card className="bg-card border-white/5">
             <CardHeader className="pb-2">
@@ -273,40 +239,20 @@ export default function Profile() {
         <div className="grid gap-4 md:grid-cols-5">
           {/* Left column */}
           <div className="md:col-span-2 space-y-4">
-            <Card className="bg-card border-white/5 text-center py-6">
-              <CardContent className="px-4 flex flex-col items-center gap-3">
-                <div className="relative group">
-                  <input
-                    type="file"
-                    id="member-avatar-upload"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                  <label htmlFor="member-avatar-upload" className="cursor-pointer block relative">
-                    {currentMember.avatarUrl ? (
-                      <img src={currentMember.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border border-white/10 hover:brightness-75 transition-all" />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black hover:brightness-75 transition-all"
-                        style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
-                        {currentMember.fullName.charAt(0)}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-5 h-5 text-white" />
-                    </div>
-                  </label>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-card flex items-center justify-center"
-                    style={{ background: memberStatus.color }}>
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-bold text-white">{currentMember.fullName}</h2>
-                  <p className="text-muted-foreground text-xs mb-2">@{currentMember.username}</p>
-                  <RankBadge rank={currentMember.rank} />
-                </div>
+            <ProfilePhotosCard
+              prefix="member"
+              fullName={currentMember.fullName}
+              username={currentMember.username}
+              avatarUrl={currentMember.avatarUrl}
+              coverUrl={currentMember.coverUrl ?? null}
+              accent="gold"
+              onAvatarChange={handleAvatarUpload}
+              onCoverChange={handleCoverUpload}
+              statusDotColor={memberStatus.color}
+              badge={<RankBadge rank={currentMember.rank} />}
+            />
+            <Card className="bg-card border-white/5 -mt-2">
+              <CardContent className="px-4 pt-2 pb-4 flex flex-col items-center gap-3">
 
                 {nextRank && (
                   <div className="w-full text-left">
@@ -500,6 +446,103 @@ export default function Profile() {
         </div>
       )}
     </div>
+  );
+}
+
+function ProfilePhotosCard({
+  prefix,
+  fullName,
+  username,
+  avatarUrl,
+  coverUrl,
+  accent,
+  onAvatarChange,
+  onCoverChange,
+  badge,
+  statusDotColor,
+}: {
+  prefix: string;
+  fullName: string;
+  username: string;
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
+  accent: "gold" | "purple";
+  onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCoverChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  badge?: React.ReactNode;
+  statusDotColor?: string;
+}) {
+  const grad =
+    accent === "purple"
+      ? "linear-gradient(135deg, hsl(273,100%,28%), hsl(273,100%,48%))"
+      : `linear-gradient(135deg, hsl(42,68%,28%), hsl(42,68%,48%))`;
+
+  return (
+    <Card className="bg-card border-white/5 overflow-hidden">
+      <div className="relative h-28 sm:h-36 group/cover">
+        {coverUrl ? (
+          <img src={coverUrl} alt="Portada" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full" style={{ background: grad }} />
+        )}
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/cover:opacity-100 transition-opacity" />
+        <input
+          type="file"
+          id={`${prefix}-cover-upload`}
+          accept="image/*"
+          className="hidden"
+          onChange={onCoverChange}
+        />
+        <label
+          htmlFor={`${prefix}-cover-upload`}
+          className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-white/20 text-[10px] font-bold text-white cursor-pointer hover:bg-black/80"
+        >
+          <ImagePlus className="w-3.5 h-3.5" />
+          Cambiar portada
+        </label>
+      </div>
+      <CardContent className="px-4 pb-5 pt-0 flex flex-col items-center">
+        <div className="relative -mt-10 mb-2 group/avatar">
+          <input
+            type="file"
+            id={`${prefix}-avatar-upload`}
+            accept="image/*"
+            className="hidden"
+            onChange={onAvatarChange}
+          />
+          <label htmlFor={`${prefix}-avatar-upload`} className="cursor-pointer block relative">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-lg hover:brightness-90 transition-all"
+              />
+            ) : (
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-black border-4 border-card shadow-lg"
+                style={{ background: grad }}
+              >
+                {fullName.charAt(0)}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity border-4 border-transparent">
+              <Camera className="w-5 h-5 text-white" />
+            </div>
+          </label>
+          {statusDotColor && (
+            <div
+              className="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-card flex items-center justify-center"
+              style={{ background: statusDotColor }}
+            >
+              <div className="w-2 h-2 rounded-full bg-white" />
+            </div>
+          )}
+        </div>
+        <h2 className="text-lg font-bold text-white">{fullName}</h2>
+        <p className="text-muted-foreground text-xs mb-2">@{username}</p>
+        {badge}
+      </CardContent>
+    </Card>
   );
 }
 

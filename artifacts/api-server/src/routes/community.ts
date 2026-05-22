@@ -252,6 +252,7 @@ router.get("/community/members/:id/profile", requireAuth, async (req: AuthReques
     username: member.username,
     fullName: member.fullName,
     avatarUrl: member.avatarUrl ?? null,
+    coverUrl: member.coverUrl ?? null,
     rank: member.rank,
     totalEarnings: parseFloat(member.totalEarnings),
     directReferrals: member.directReferrals,

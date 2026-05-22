@@ -344,7 +344,7 @@ export default function Network() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -390,12 +390,14 @@ export default function Network() {
         ))}
       </div>
 
+      <div key={activeTab} className="w-full min-w-0 isolate">
+
       {/* Tab: Árbol Genealógico */}
       {activeTab === "Árbol Genealógico" && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 w-full min-w-0">
           
           {/* Main tree view container */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="xl:col-span-3 space-y-4 min-w-0">
             
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-card border border-white/5 p-3 rounded-xl">
@@ -473,43 +475,47 @@ export default function Network() {
             </div>
 
             {/* Visual Tree Graph Box */}
-            <div className="relative">
-              {/* Zoom indicators */}
-              <div className="absolute right-4 top-4 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md border border-white/10 p-1 rounded-lg">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(z => Math.min(z + 0.1, 1.25))} title="Acercar">
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(z => Math.max(z - 0.1, 0.45))} title="Alejar">
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(0.85)} title="Restablecer">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-
-              {/* Pan view viewport */}
-              <div className="overflow-auto border border-white/5 rounded-2xl bg-black/20 p-8 min-h-[460px] flex justify-center items-start cursor-grab active:cursor-grabbing">
-                <div 
-                  className="origin-top transition-transform duration-150"
-                  style={{ transform: `scale(${zoom})` }}
-                >
-                  {network ? (
-                    <TreeNodeCard 
-                      node={network as NetworkNode} 
-                      selectedNodeId={selectedNodeId} 
-                      onSelect={(id) => setSelectedNodeId(id)} 
-                      onFocus={handleFocusNode} 
-                    />
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center pt-20">No se pudo cargar la estructura de red.</p>
-                  )}
+            <Card className="bg-card border-white/5 overflow-hidden">
+              <CardHeader className="py-2 px-3 border-b border-white/5 flex flex-row items-center justify-between gap-2">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Árbol genealógico</CardTitle>
+                <div className="flex items-center gap-1 bg-black/40 border border-white/10 p-1 rounded-lg shrink-0">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(z => Math.min(z + 0.1, 1.25))} title="Acercar">
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(z => Math.max(z - 0.1, 0.45))} title="Alejar">
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setZoom(0.85)} title="Restablecer">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="w-full max-w-full overflow-x-auto overflow-y-auto max-h-[min(70vh,560px)] bg-black/20">
+                  <div className="inline-flex justify-center items-start p-6 min-w-full">
+                    <div
+                      className="origin-top transition-transform duration-150"
+                      style={{ transform: `scale(${zoom})` }}
+                    >
+                      {network ? (
+                        <TreeNodeCard
+                          node={network as NetworkNode}
+                          selectedNodeId={selectedNodeId}
+                          onSelect={(id) => setSelectedNodeId(id)}
+                          onFocus={handleFocusNode}
+                        />
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-20 px-8">No se pudo cargar la estructura de red.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right column: Selected member side panel */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-1 min-w-0">
             <Card className="bg-card border-white/5 h-full flex flex-col justify-between">
               <div>
                 <CardHeader className="pb-3 border-b border-white/5">
@@ -800,10 +806,10 @@ export default function Network() {
 
       {/* Tab: Simulador y Reglas */}
       {activeTab === "Simulador y Reglas" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 w-full min-w-0 items-start">
           
           {/* Simulator Calculator Card */}
-          <Card className="bg-card border-white/5">
+          <Card className="bg-card border-white/5 w-full min-w-0">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: GOLD }} />
@@ -849,18 +855,33 @@ export default function Network() {
               </div>
 
               {/* Simulation Result Details */}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">Desglose de Crecimiento</h4>
-                {simResults.map((res) => (
-                  <div key={res.level} className="flex justify-between items-center py-2 border-b border-white/3 text-xs">
-                    <span className="text-muted-foreground">Nivel {res.level}</span>
-                    <div className="flex gap-4 items-center">
-                      <span className="text-white font-semibold">{res.count.toLocaleString()} miembros nuevos</span>
-                      <span className="font-bold text-white min-w-[70px] text-right">Total: {res.total.toLocaleString()}</span>
-                      <span className="font-bold text-emerald-400 min-w-[80px] text-right">${res.commission.toLocaleString()} USD</span>
+                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                  {simResults.map((res) => (
+                    <div
+                      key={res.level}
+                      className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 rounded-lg border border-white/5 bg-white/[0.02] text-xs"
+                    >
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Nivel</div>
+                        <div className="font-black text-white mt-0.5">{res.level}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Nuevos</div>
+                        <div className="font-semibold text-white mt-0.5">{res.count.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-bold">Acumulado</div>
+                        <div className="font-bold text-white mt-0.5">{res.total.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-emerald-400 font-bold">Residual</div>
+                        <div className="font-bold text-emerald-400 mt-0.5">${res.commission.toLocaleString()}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               {/* Total Card projection */}
@@ -882,7 +903,7 @@ export default function Network() {
           </Card>
 
           {/* Compensation Plan Rules Card */}
-          <Card className="bg-card border-white/5">
+          <Card className="bg-card border-white/5 w-full min-w-0">
             <CardHeader className="pb-3 border-b border-white/5">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Award className="w-4 h-4" style={{ color: GOLD }} />
@@ -940,6 +961,8 @@ export default function Network() {
 
         </div>
       )}
+
+      </div>
 
     </div>
   );

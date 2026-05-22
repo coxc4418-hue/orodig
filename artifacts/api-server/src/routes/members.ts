@@ -23,6 +23,7 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
     sponsorId: m.sponsorId,
     sponsorName: sponsorName ?? null,
     avatarUrl: m.avatarUrl,
+    coverUrl: m.coverUrl ?? null,
     createdAt: m.createdAt.toISOString(),
   };
 }

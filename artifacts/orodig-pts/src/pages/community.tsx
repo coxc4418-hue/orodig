@@ -857,10 +857,18 @@ function SocialProfileModal({ memberId, onClose }: { memberId: number; onClose: 
             <p className="text-sm text-muted-foreground">Cargando perfil...</p>
           </div>
         ) : profile ? (
-          <div className="p-6 space-y-6">
+          <div className="space-y-0">
+            <div className="relative h-24 w-full">
+              {profile.coverUrl ? (
+                <img src={profile.coverUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: `linear-gradient(135deg, hsl(42,68%,28%), hsl(42,68%,48%))` }} />
+              )}
+            </div>
+          <div className="p-6 space-y-6 -mt-10">
             {/* Header info */}
             <div className="flex flex-col items-center text-center space-y-3 pt-2">
-              <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center font-black text-3xl text-black shadow-lg shrink-0"
+              <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center font-black text-3xl text-black shadow-lg shrink-0 border-4 border-card"
                 style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,58%))` }}>
                 {profile.avatarUrl ? (
                   <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
@@ -923,6 +931,7 @@ function SocialProfileModal({ memberId, onClose }: { memberId: number; onClose: 
                 <div>Ganancia Generada</div>
               </div>
             </div>
+          </div>
           </div>
         ) : (
           <div className="p-8 text-center text-muted-foreground">Error al cargar perfil.</div>

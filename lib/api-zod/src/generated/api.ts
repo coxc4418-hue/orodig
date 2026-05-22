@@ -42,6 +42,7 @@ export const LoginResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -92,6 +93,7 @@ export const GetMeResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -114,7 +116,8 @@ export const UpdateProfileBody = zod.object({
   "phone": zod.string().nullish(),
   "currentPassword": zod.string().optional(),
   "newPassword": zod.string().min(updateProfileBodyNewPasswordMin).optional(),
-  "avatarUrl": zod.string().nullish()
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -134,6 +137,7 @@ export const UpdateProfileResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -201,6 +205,7 @@ export const ListMembersResponseItem = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -235,6 +240,7 @@ export const GetMemberResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -677,6 +683,7 @@ export const AdminListMembersResponseItem = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -717,6 +724,7 @@ export const AdminUpdateMemberResponse = zod.object({
   "sponsorId": zod.number().nullish(),
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
   "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
@@ -844,6 +852,7 @@ export const GetSocialProfileResponse = zod.object({
   "username": zod.string(),
   "fullName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "rank": zod.string(),
   "totalEarnings": zod.number().optional(),
   "directReferrals": zod.number().optional(),

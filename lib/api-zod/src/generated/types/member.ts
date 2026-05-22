@@ -30,6 +30,8 @@ export interface Member {
   /** @nullable */
   avatarUrl?: string | null;
   /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
   lastPaymentAt?: Date | null;
   referralStatus?: MemberReferralStatus;
   /** @nullable */

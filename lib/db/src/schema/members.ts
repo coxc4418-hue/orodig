@@ -20,6 +20,7 @@ export const membersTable = pgTable("members", {
   isActive: boolean("is_active").notNull().default(true),
   sponsorId: integer("sponsor_id"),
   avatarUrl: text("avatar_url"),
+  coverUrl: text("cover_url"),
   lastPaymentAt: timestamp("last_payment_at", { withTimezone: true }),
   referralStatus: text("referral_status").notNull().default("ROJO"),
   activatedAt: timestamp("activated_at", { withTimezone: true }),

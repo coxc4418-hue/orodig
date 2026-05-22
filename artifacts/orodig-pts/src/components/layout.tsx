@@ -31,18 +31,27 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard",  icon: LayoutDashboard, label: "Panel Principal", short: "Panel" },
-  { href: "/community",  icon: Globe,           label: "Comunidad Social", short: "Comunidad" },
-  { href: "/network",    icon: Users,           label: "Mi Red",          short: "Red" },
-  { href: "/earnings",   icon: History,         label: "Ganancias",       short: "Ganancias" },
-  { href: "/leaderboard",icon: Trophy,          label: "Clasificación",   short: "Top" },
-  { href: "/products",   icon: ShoppingBag,     label: "Productos",       short: "Tienda" },
-  { href: "/withdrawals",icon: Wallet,          label: "Fondos",          short: "Fondos" },
-  { href: "/rangos",     icon: Diamond,         label: "Rangos Mineros",  short: "Rangos" },
-  { href: "/premios",    icon: Gift,            label: "Premios & Metas", short: "Premios" },
-  { href: "/plan",       icon: Layers,          label: "Plan de Compensación", short: "Plan" },
-  { href: "/profile",    icon: User,            label: "Mi Perfil",       short: "Perfil" },
+  { href: "/dashboard",  icon: LayoutDashboard, label: "Panel Principal", short: "Panel", neon: "#22d3ee" },
+  { href: "/community",  icon: Globe,           label: "Comunidad Social", short: "Comunidad", neon: "#a78bfa" },
+  { href: "/network",    icon: Users,           label: "Mi Red",          short: "Red", neon: "#34d399" },
+  { href: "/earnings",   icon: History,         label: "Ganancias",       short: "Ganancias", neon: "#fbbf24" },
+  { href: "/leaderboard",icon: Trophy,          label: "Clasificación",   short: "Top", neon: "#f472b6" },
+  { href: "/products",   icon: ShoppingBag,     label: "Productos",       short: "Tienda", neon: "#fb923c" },
+  { href: "/withdrawals",icon: Wallet,          label: "Fondos",          short: "Fondos", neon: "#4ade80" },
+  { href: "/rangos",     icon: Diamond,         label: "Rangos Mineros",  short: "Rangos", neon: "#e879f9" },
+  { href: "/premios",    icon: Gift,            label: "Premios & Metas", short: "Premios", neon: "#facc15" },
+  { href: "/plan",       icon: Layers,          label: "Plan de Compensación", short: "Plan", neon: "#60a5fa" },
+  { href: "/profile",    icon: User,            label: "Mi Perfil",       short: "Perfil", neon: "#f87171" },
 ];
+
+function neonLabelStyle(color: string, active: boolean) {
+  return {
+    color: active ? color : `${color}cc`,
+    textShadow: active
+      ? `0 0 6px ${color}, 0 0 14px ${color}99, 0 0 28px ${color}44`
+      : `0 0 4px ${color}88`,
+  } as const;
+}
 
 const BOTTOM_NAV = [
   { href: "/dashboard",  icon: LayoutDashboard, label: "Panel" },
@@ -63,8 +72,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isAdmin = currentMember.username === "admin";
   const navItems = isAdmin
     ? [
-        { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin" },
-        { href: "/community", icon: Globe, label: "Comunidad Social", short: "Comunidad" }
+        { href: "/admin", icon: Shield, label: "Panel Admin", short: "Admin", neon: "#c084fc" },
+        { href: "/community", icon: Globe, label: "Comunidad Social", short: "Comunidad", neon: "#a78bfa" },
+        { href: "/profile", icon: User, label: "Mi Perfil", short: "Perfil", neon: "#f87171" },
       ]
     : NAV_ITEMS;
   const bottomNavItems = isAdmin
@@ -132,30 +142,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-2 mb-2">Menú</div>
         {navItems.map((item) => {
           const isActive = location === item.href;
-          const isAdminItem = item.href === "/admin";
+          const neon = "neon" in item ? item.neon : GOLD;
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm group ${
-                isActive
-                  ? "font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/4"
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm group font-black tracking-wide ${
+                isActive ? "" : "hover:bg-white/4"
               }`}
               style={isActive
-                ? isAdminItem
-                  ? { background: "hsl(273 100% 50% / 0.12)", color: "hsl(273,100%,75%)", border: "1px solid hsl(273 100% 50% / 0.2)" }
-                  : { background: "hsl(42 68% 50% / 0.12)", color: GOLD, border: "1px solid hsl(42 68% 50% / 0.2)" }
-                : {}
+                ? {
+                    background: `${neon}18`,
+                    border: `1px solid ${neon}44`,
+                    ...neonLabelStyle(neon, true),
+                  }
+                : neonLabelStyle(neon, false)
               }
             >
               <item.icon
-                className={`w-4 h-4 shrink-0 ${isActive ? "" : "group-hover:text-foreground"}`}
-                style={isActive ? { color: isAdminItem ? "hsl(273,100%,75%)" : GOLD } : {}}
+                className="w-4 h-4 shrink-0"
+                style={{ color: neon, filter: `drop-shadow(0 0 4px ${neon})` }}
               />
-              <span className="flex-1">{item.label}</span>
-              {isActive && <ChevronRight className="w-3 h-3" style={{ color: isAdminItem ? "hsl(273,100%,75%)" : GOLD }} />}
+              <span className="flex-1 uppercase text-[11px]">{item.label}</span>
+              {isActive && <ChevronRight className="w-3 h-3" style={{ color: neon }} />}
             </Link>
           );
         })}
@@ -223,7 +233,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="pointer-events-none fixed inset-0 z-[-1]"
           style={{ background: "radial-gradient(circle at top right, hsl(42 68% 50% / 0.03), transparent 40%), radial-gradient(circle at bottom left, hsl(273 100% 50% / 0.03), transparent 40%)" }}
         />
-        <div className="pt-14 md:pt-0 pb-20 md:pb-0 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="pt-14 md:pt-0 pb-20 md:pb-0 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto min-w-0 overflow-x-hidden">
           {children}
         </div>
       </main>

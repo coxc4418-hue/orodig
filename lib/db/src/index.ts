@@ -53,6 +53,7 @@ const COLUMN_MAP: Record<string, string> = {
   referral_code: "referralCode",
   sponsor_id: "sponsorId",
   avatar_url: "avatarUrl",
+  cover_url: "coverUrl",
   last_payment_at: "lastPaymentAt",
   referral_status: "referralStatus",
   activated_at: "activatedAt",
