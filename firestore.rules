@@ -1,8 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // All data access goes through the Express API (Firebase Admin SDK).
+    // Browsers must not read/write Firestore directly.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

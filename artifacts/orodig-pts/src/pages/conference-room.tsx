@@ -25,6 +25,7 @@ import {
   Activity,
   Users
 } from "lucide-react";
+import { getStreamEmbedUrl } from "@/lib/embed";
 
 const GOLD = "hsl(42,68%,50%)";
 
@@ -168,7 +169,7 @@ export default function ConferenceRoom() {
   }
 
   const isLive = conference.isLive;
-
+  const embedUrl = getStreamEmbedUrl(conference.streamUrl);
 
   return (
     <div className="space-y-6">
@@ -218,35 +219,22 @@ export default function ConferenceRoom() {
                     </Button>
                   </div>
                 </>
+              ) : embedUrl ? (
+                <iframe
+                  src={embedUrl}
+                  title={conference.title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               ) : (
-                // Spectator Simulated Premium Player
-                <div className="absolute inset-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black flex items-center justify-center">
-                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
-                  <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
-                    <div className="relative">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 animate-spin-slow blur-xl opacity-50 absolute -inset-2" />
-                      <div className="w-24 h-24 rounded-full bg-black border-2 border-white/10 flex items-center justify-center relative shadow-2xl">
-                         <PlaySquare className="w-10 h-10 text-white opacity-80" />
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 bg-red-600 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center animate-pulse">
-                         <span className="w-2 h-2 bg-white rounded-full" />
-                      </div>
-                    </div>
-                    
-                    <div className="text-center space-y-2">
-                      <h3 className="text-xl font-black text-white tracking-tight">TRANSMISIÓN EN CURSO</h3>
-                      <div className="flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        <span className="flex items-center gap-1.5"><Activity className="w-4 h-4 text-green-400" /> Señal Óptima</span>
-                        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-amber-500" /> En Vivo</span>
-                      </div>
-                    </div>
-                    
-                    {/* Visualizer bars */}
-                    <div className="flex items-end gap-1 h-8 mt-4">
-                      {[...Array(12)].map((_, i) => (
-                        <div key={i} className="w-1.5 bg-gradient-to-t from-amber-600 to-amber-300 rounded-full animate-pulse" style={{ height: `${Math.max(20, Math.random() * 100)}%`, animationDelay: `${i * 0.1}s`, animationDuration: '0.8s' }} />
-                      ))}
-                    </div>
+                <div className="absolute inset-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black flex items-center justify-center p-6">
+                  <div className="relative z-10 flex flex-col items-center justify-center space-y-4 text-center max-w-md">
+                    <PlaySquare className="w-12 h-12 text-white opacity-70" />
+                    <h3 className="text-lg font-black text-white tracking-tight">EN VIVO</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      El anfitrión aún no configuró una URL de transmisión (YouTube/Vimeo). Puedes seguir el chat en tiempo real.
+                    </p>
                   </div>
                 </div>
               )

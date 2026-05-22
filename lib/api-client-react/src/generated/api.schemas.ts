@@ -67,6 +67,7 @@ export const MemberReferralStatus = {
   VERDE: 'VERDE',
   AMARILLO: 'AMARILLO',
   ROJO: 'ROJO',
+  VENCIDO: 'VENCIDO',
   SUSPENDIDO: 'SUSPENDIDO',
 } as const;
 
@@ -589,6 +590,83 @@ export interface ConferenceUpdate {
   /** @nullable */
   endedAt?: string | null;
   chatMessage?: ConferenceUpdateChatMessage;
+}
+
+export interface Prize {
+  id: number;
+  name: string;
+  emoji?: string;
+  imageUrl?: string;
+  fracciones: number;
+  description?: string;
+  color?: string;
+  borderColor?: string;
+  accentColor?: string;
+  isSpecial?: boolean;
+}
+
+export interface PrizeInput {
+  id?: number;
+  name?: string;
+  emoji?: string;
+  imageUrl?: string;
+  fracciones?: number;
+  description?: string;
+  color?: string;
+  borderColor?: string;
+  accentColor?: string;
+  isSpecial?: boolean;
+}
+
+export interface QuincenalWinner {
+  week: string;
+  name: string;
+  amount: number;
+}
+
+export type ReferralStatusReferralStatus = typeof ReferralStatusReferralStatus[keyof typeof ReferralStatusReferralStatus];
+
+
+export const ReferralStatusReferralStatus = {
+  VERDE: 'VERDE',
+  AMARILLO: 'AMARILLO',
+  ROJO: 'ROJO',
+  VENCIDO: 'VENCIDO',
+  SUSPENDIDO: 'SUSPENDIDO',
+} as const;
+
+export interface ReferralStatus {
+  referralStatus: ReferralStatusReferralStatus;
+  /** @nullable */
+  activatedAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  lastRepurchaseAt?: string | null;
+  daysRemaining: number;
+  msRemaining: number;
+}
+
+export interface ReferralCountdown {
+  secondsRemaining: number;
+  /** @nullable */
+  expiresAt?: string | null;
+  status: string;
+}
+
+export interface ReferralActivateInput {
+  memberId: number;
+  days?: number;
+}
+
+export interface ReferralRenewInput {
+  memberId?: number;
+}
+
+export interface ReferralActionResult {
+  success: boolean;
+  message: string;
+  expiresAt?: string;
 }
 
 export type AdminDeleteProduct200 = {

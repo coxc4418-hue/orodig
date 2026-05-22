@@ -1,10 +1,13 @@
 import { Router, type IRouter } from "express";
-import { db, membersTable, postsTable, postCommentsTable, followsTable, conferencesTable, firestore } from "@workspace/db";
+import { db, membersTable, getFirestoreBackend } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { z } from "zod";
-import {
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const {
+  firestore,
   doc,
   getDoc,
   updateDoc,
@@ -17,7 +20,8 @@ import {
   where,
   orderBy,
   limit,
-} from "firebase/firestore/lite";
+  deleteDoc,
+} = getFirestoreBackend() as any;
 
 const router: IRouter = Router();
 
@@ -105,7 +109,6 @@ router.delete("/community/posts/:id", requireAuth, async (req: AuthRequest, res)
   const data = postDoc.data();
   const isAdmin = (await getMemberMini(memberId))?.username === "admin";
   if (data.memberId !== memberId && !isAdmin) { res.status(403).json({ error: "Sin permisos" }); return; }
-  const { deleteDoc } = await import("firebase/firestore/lite");
   await deleteDoc(postRef);
   // Also delete comments
   const commentsSnap = await getDocs(query(collection(firestore, "post_comments"), where("postId", "==", id)));
@@ -168,7 +171,6 @@ router.post("/community/posts/:id/comments", requireAuth, async (req: AuthReques
   const counterRef = doc(firestore, "counters", "post_comments");
   const counterDoc = await getDoc(counterRef);
   const nextId = counterDoc.exists() ? (counterDoc.data().current ?? 0) + 1 : 1;
-  const { setDoc } = await import("firebase/firestore/lite");
   await setDoc(counterRef, { current: nextId });
 
   const now = new Date();
@@ -192,7 +194,6 @@ router.delete("/community/posts/:postId/comments/:id", requireAuth, async (req: 
   const data = commentDoc.data();
   const isAdmin = (await getMemberMini(memberId))?.username === "admin";
   if (data.memberId !== memberId && !isAdmin) { res.status(403).json({ error: "Sin permisos" }); return; }
-  const { deleteDoc } = await import("firebase/firestore/lite");
   await deleteDoc(commentRef);
   const postRef = doc(firestore, "posts", postId.toString());
   const postDoc = await getDoc(postRef);
@@ -215,7 +216,7 @@ router.get("/community/members/:id/profile", requireAuth, async (req: AuthReques
   const postsSnap = await getDocs(query(collection(firestore, "posts"), where("memberId", "==", id)));
 
   const viewerId = req.memberId!;
-  const isFollowing = followersSnap.docs.some(d => d.data().followerId === viewerId);
+  const isFollowing = followersSnap.docs.some((d: { data: () => { followerId?: number } }) => d.data().followerId === viewerId);
 
   res.json({
     id: member.id,
@@ -244,7 +245,6 @@ router.post("/community/follow/:id", requireAuth, async (req: AuthRequest, res):
     where("followingId", "==", followingId)
   ));
 
-  const { deleteDoc, setDoc } = await import("firebase/firestore/lite");
   if (!existingSnap.empty) {
     for (const d of existingSnap.docs) await deleteDoc(d.ref);
     res.json({ following: false });
@@ -267,18 +267,27 @@ router.post("/community/follow/:id", requireAuth, async (req: AuthRequest, res):
 // GET /community/conferences — list conferences
 router.get("/community/conferences", requireAuth, async (_req, res): Promise<void> => {
   const snap = await getDocs(query(collection(firestore, "conferences"), orderBy("createdAt", "desc")));
-  const conferences = snap.docs.map(d => {
-    const data = d.data();
+  const conferences = snap.docs.map((d: { data: () => Record<string, unknown> }) => {
+    const data = d.data() as Record<string, any>;
+    const toIso = (val: unknown) => {
+      if (!val) return null;
+      if (val instanceof Date) return val.toISOString();
+      if (typeof val === "string") return val;
+      if (typeof val === "object" && val !== null && "seconds" in val) {
+        return new Date((val as { seconds: number }).seconds * 1000).toISOString();
+      }
+      return new Date(val as string | number).toISOString();
+    };
     return {
       id: data.id,
       title: data.title,
       description: data.description ?? "",
       streamUrl: data.streamUrl ?? "",
       isLive: data.isLive ?? false,
-      scheduledAt: data.scheduledAt ? (data.scheduledAt instanceof Date ? data.scheduledAt.toISOString() : new Date(data.scheduledAt?.seconds * 1000).toISOString()) : null,
-      endedAt: data.endedAt ? (data.endedAt instanceof Date ? data.endedAt.toISOString() : new Date(data.endedAt?.seconds * 1000).toISOString()) : null,
+      scheduledAt: toIso(data.scheduledAt),
+      endedAt: toIso(data.endedAt),
       chatMessages: data.chatMessages ?? [],
-      createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : new Date(data.createdAt?.seconds * 1000 || Date.now()).toISOString(),
+      createdAt: toIso(data.createdAt) ?? new Date().toISOString(),
     };
   });
   res.json(conferences);
@@ -320,7 +329,6 @@ router.post("/community/conferences", requireAuth, async (_req, res): Promise<vo
     return;
   }
 
-  const { setDoc } = await import("firebase/firestore/lite");
   const counterRef = doc(firestore, "counters", "conferences");
   const counterDoc = await getDoc(counterRef);
   const nextId = counterDoc.exists() ? (counterDoc.data().current ?? 0) + 1 : 1;
@@ -403,7 +411,6 @@ router.patch("/community/conferences/:id", requireAuth, async (req: AuthRequest,
 // DELETE /community/conferences/:id (admin only)
 router.delete("/community/conferences/:id", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
   const id = parseInt((_req as any).params.id, 10);
-  const { deleteDoc } = await import("firebase/firestore/lite");
   const confRef = doc(firestore, "conferences", id.toString());
   const confDoc = await getDoc(confRef);
   if (!confDoc.exists()) { res.status(404).json({ error: "Conferencia no encontrada" }); return; }
@@ -462,24 +469,40 @@ const SEED_PRIZES = [
   }
 ];
 
+const QUINCENAL_WINNERS = [
+  { week: "Semana 1", name: "José Ruiz", amount: 250 },
+  { week: "Semana 1", name: "María Mejía", amount: 250 },
+  { week: "Semana 1", name: "Alexander López", amount: 250 },
+  { week: "Semana 1", name: "Carlos Martínez", amount: 250 },
+  { week: "Semana 1", name: "Miguel Cázares", amount: 250 },
+  { week: "Semana 2", name: "Juan Rojas", amount: 250 },
+  { week: "Semana 2", name: "Milena Vargas", amount: 250 },
+  { week: "Semana 2", name: "Alexandra Sterling", amount: 250 },
+  { week: "Semana 2", name: "Víctor Casanova", amount: 250 },
+  { week: "Semana 2", name: "Daniel Robledo", amount: 250 },
+];
+
+// GET /community/prizes/quincenal
+router.get("/community/prizes/quincenal", async (_req, res): Promise<void> => {
+  res.json(QUINCENAL_WINNERS);
+});
+
 // GET /community/prizes
 router.get("/community/prizes", async (req, res): Promise<void> => {
   try {
     const prizesCol = collection(firestore, "prizes");
     const snapshot = await getDocs(prizesCol);
-    let prizes = snapshot.docs.map(doc => doc.data());
+    let prizes = snapshot.docs.map((d: { data: () => Record<string, unknown> }) => d.data());
     
     if (prizes.length === 0) {
-      const { setDoc } = await import("firebase/firestore/lite");
       for (const prize of SEED_PRIZES) {
         await setDoc(doc(firestore, "prizes", prize.id.toString()), prize);
       }
       prizes = SEED_PRIZES;
     } else {
       // Update existing seed prizes that have no image with the seed imageUrl
-      const { setDoc } = await import("firebase/firestore/lite");
       for (const seedPrize of SEED_PRIZES) {
-        const existing = prizes.find(p => p.id === seedPrize.id);
+        const existing = prizes.find((p: { id?: number }) => p.id === seedPrize.id);
         if (existing && !existing.imageUrl && seedPrize.imageUrl) {
           existing.imageUrl = seedPrize.imageUrl;
           await setDoc(doc(firestore, "prizes", seedPrize.id.toString()), { ...existing, imageUrl: seedPrize.imageUrl }, { merge: true });
@@ -487,7 +510,7 @@ router.get("/community/prizes", async (req, res): Promise<void> => {
       }
     }
     
-    prizes.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+    prizes.sort((a: { id?: number }, b: { id?: number }) => (a.id ?? 0) - (b.id ?? 0));
     res.json(prizes);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -497,15 +520,14 @@ router.get("/community/prizes", async (req, res): Promise<void> => {
 // POST /community/prizes (create or update, admin only)
 router.post("/community/prizes", requireAuth, requireAdmin, async (req, res): Promise<void> => {
   try {
-    const { setDoc } = await import("firebase/firestore/lite");
     const data = req.body;
     let prizeId = data.id;
 
     if (!prizeId) {
       const prizesCol = collection(firestore, "prizes");
       const snapshot = await getDocs(prizesCol);
-      const existing = snapshot.docs.map(doc => doc.data());
-      prizeId = existing.length > 0 ? Math.max(...existing.map(p => p.id ?? 0)) + 1 : 1;
+      const existing = snapshot.docs.map((d: { data: () => { id?: number } }) => d.data());
+      prizeId = existing.length > 0 ? Math.max(...existing.map((p: { id?: number }) => p.id ?? 0)) + 1 : 1;
     }
 
     const prizeData = {
@@ -533,7 +555,6 @@ router.post("/community/prizes", requireAuth, requireAdmin, async (req, res): Pr
 router.delete("/community/prizes/:id", requireAuth, requireAdmin, async (_req, res): Promise<void> => {
   try {
     const id = parseInt((_req as any).params.id, 10);
-    const { deleteDoc } = await import("firebase/firestore/lite");
     const prizeRef = doc(firestore, "prizes", id.toString());
     const prizeDoc = await getDoc(prizeRef);
     if (!prizeDoc.exists()) { res.status(404).json({ error: "Premio no encontrado" }); return; }

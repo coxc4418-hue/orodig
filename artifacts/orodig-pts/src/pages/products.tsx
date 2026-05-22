@@ -37,8 +37,8 @@ export default function Products() {
         setJustBought(productId);
         setTimeout(() => setJustBought(null), 3000);
         toast({
-          title: "¡Compra exitosa!",
-          description: "Puntos acreditados a tu cuenta.",
+          title: "Compra registrada",
+          description: "Tu saldo fue debitado. Los puntos y comisiones se acreditan cuando el administrador apruebe la compra.",
           className: "border-green-500/30 bg-black text-white",
         });
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });

@@ -10,19 +10,6 @@ const GOLD = "hsl(42,68%,50%)";
 
 // Las metas y premios ahora se gestionan dinámicamente desde el panel de administración.
 
-const QUINCENAL_WINNERS = [
-  { week: "Semana 1", name: "José Ruiz", amount: 250 },
-  { week: "Semana 1", name: "María Mejía", amount: 250 },
-  { week: "Semana 1", name: "Alexander López", amount: 250 },
-  { week: "Semana 1", name: "Carlos Martínez", amount: 250 },
-  { week: "Semana 1", name: "Miguel Cázares", amount: 250 },
-  { week: "Semana 2", name: "Juan Rojas", amount: 250 },
-  { week: "Semana 2", name: "Milena Vargas", amount: 250 },
-  { week: "Semana 2", name: "Alexandra Sterling", amount: 250 },
-  { week: "Semana 2", name: "Víctor Casanova", amount: 250 },
-  { week: "Semana 2", name: "Daniel Robledo", amount: 250 },
-];
-
 export default function Premios() {
   const { currentMember } = useAuth();
   const userPoints = currentMember ? parseFloat(currentMember.points as unknown as string) : 0;
@@ -32,6 +19,15 @@ export default function Premios() {
     queryFn: async () => {
       const res = await fetch(`${getApiBase()}/api/community/prizes`);
       if (!res.ok) throw new Error("Error al obtener premios");
+      return res.json();
+    }
+  });
+
+  const { data: quincenalWinners } = useQuery<{ week: string; name: string; amount: number }[]>({
+    queryKey: ["/api/community/prizes/quincenal"],
+    queryFn: async () => {
+      const res = await fetch(`${getApiBase()}/api/community/prizes/quincenal`);
+      if (!res.ok) throw new Error("Error al obtener ganadores");
       return res.json();
     }
   });
@@ -193,7 +189,7 @@ export default function Premios() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {QUINCENAL_WINNERS.map((w) => (
+            {(quincenalWinners ?? []).map((w) => (
               <div key={w.week} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "hsl(42 68% 50% / 0.08)", border: "1px solid hsl(42 68% 50% / 0.15)" }}>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{w.week}</p>

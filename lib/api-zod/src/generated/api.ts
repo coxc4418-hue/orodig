@@ -43,7 +43,7 @@ export const LoginResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -93,7 +93,7 @@ export const GetMeResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -135,7 +135,7 @@ export const UpdateProfileResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -202,7 +202,7 @@ export const ListMembersResponseItem = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -236,7 +236,7 @@ export const GetMemberResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -678,7 +678,7 @@ export const AdminListMembersResponseItem = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -718,7 +718,7 @@ export const AdminUpdateMemberResponse = zod.object({
   "sponsorName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "lastPaymentAt": zod.coerce.date().nullish(),
-  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'SUSPENDIDO']).optional(),
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']).optional(),
   "expiresAt": zod.coerce.date().nullish(),
   "activatedAt": zod.coerce.date().nullish(),
   "lastRepurchaseAt": zod.coerce.date().nullish(),
@@ -899,6 +899,127 @@ export const CreateConferenceBody = zod.object({
   "streamUrl": zod.string().optional(),
   "isLive": zod.boolean().optional(),
   "scheduledAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary List prize goals (public catalog)
+ */
+export const ListPrizesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "emoji": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "fracciones": zod.number(),
+  "description": zod.string().optional(),
+  "color": zod.string().optional(),
+  "borderColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "isSpecial": zod.boolean().optional()
+})
+export const ListPrizesResponse = zod.array(ListPrizesResponseItem)
+
+
+/**
+ * @summary Create or update a prize (admin only)
+ */
+export const UpsertPrizeBody = zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "emoji": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "fracciones": zod.number().optional(),
+  "description": zod.string().optional(),
+  "color": zod.string().optional(),
+  "borderColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "isSpecial": zod.boolean().optional()
+})
+
+export const UpsertPrizeResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "emoji": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "fracciones": zod.number(),
+  "description": zod.string().optional(),
+  "color": zod.string().optional(),
+  "borderColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "isSpecial": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Biweekly bonus winners list
+ */
+export const ListQuincenalWinnersResponseItem = zod.object({
+  "week": zod.string(),
+  "name": zod.string(),
+  "amount": zod.number()
+})
+export const ListQuincenalWinnersResponse = zod.array(ListQuincenalWinnersResponseItem)
+
+
+/**
+ * @summary Delete a prize (admin only)
+ */
+export const DeletePrizeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Membership status and days remaining
+ */
+export const GetReferralStatusResponse = zod.object({
+  "referralStatus": zod.enum(['VERDE', 'AMARILLO', 'ROJO', 'VENCIDO', 'SUSPENDIDO']),
+  "activatedAt": zod.coerce.date().nullish(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "lastRepurchaseAt": zod.coerce.date().nullish(),
+  "daysRemaining": zod.number(),
+  "msRemaining": zod.number()
+})
+
+
+/**
+ * @summary Seconds until membership expires
+ */
+export const GetReferralCountdownResponse = zod.object({
+  "secondsRemaining": zod.number(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "status": zod.string()
+})
+
+
+/**
+ * @summary Activate a member account (admin only)
+ */
+export const activateReferralBodyDaysDefault = 30;
+
+export const ActivateReferralBody = zod.object({
+  "memberId": zod.number(),
+  "days": zod.number().default(activateReferralBodyDaysDefault)
+})
+
+export const ActivateReferralResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string(),
+  "expiresAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Renew membership (self or admin for another member)
+ */
+export const RenewReferralBody = zod.object({
+  "memberId": zod.number().optional()
+})
+
+export const RenewReferralResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string(),
+  "expiresAt": zod.coerce.date().optional()
 })
 
 

@@ -10,7 +10,8 @@ import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { useLogout, useUpdateProfile, useListPurchases, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { getApiBase } from "@/lib/api";
 
 const GOLD = "hsl(42,68%,50%)";
 const RANK_LIST = [
@@ -39,6 +40,32 @@ export default function Profile() {
   const logoutMutation = useLogout();
   const { data: summary } = useGetDashboardSummary();
   const { data: purchases } = useListPurchases();
+  const renewMembership = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("orodig_token");
+      const res = await fetch(`${getApiBase()}/api/referrals/renew`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "No se pudo renovar");
+      }
+      return res.json();
+    },
+    onSuccess: (data: { message?: string }) => {
+      toast({ title: "Membresía renovada", description: data.message ?? "Tu estado VERDE fue extendido 30 días." });
+      qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const updateProfile = useUpdateProfile({
     mutation: {
       onSuccess: () => {
@@ -331,6 +358,19 @@ export default function Profile() {
                 </Card>
               ))}
             </div>
+
+            {((currentMember.referralStatus as string) === "VENCIDO" ||
+              currentMember.referralStatus === "ROJO" ||
+              !currentMember.expiresAt) && (
+              <Button
+                className="w-full font-bold text-sm"
+                style={{ background: `linear-gradient(135deg, hsl(42,68%,38%), hsl(42,68%,56%))`, color: "#000" }}
+                onClick={() => renewMembership.mutate()}
+                disabled={renewMembership.isPending}
+              >
+                {renewMembership.isPending ? "Renovando..." : "Renovar membresía (30 días)"}
+              </Button>
+            )}
           </div>
 
           {/* Right column */}

@@ -1,6 +1,15 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "orodig-pts-secret-2024";
+function getJwtSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET is required in production");
+  }
+  return "orodig-pts-secret-2024";
+}
+
+const JWT_SECRET = getJwtSecret();
 
 export function signToken(payload: { memberId: number; username: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });

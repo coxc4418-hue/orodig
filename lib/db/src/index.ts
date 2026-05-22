@@ -1,40 +1,28 @@
-import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  getDocs, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
+import { Timestamp } from "firebase/firestore/lite";
+import * as schema from "./schema";
+import { getFirestoreBackend, firestore } from "./firestoreBackend.js";
+
+const fs = getFirestoreBackend();
+const {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
   runTransaction,
   query,
   where,
-  Timestamp
-} from "firebase/firestore/lite";
-import * as schema from "./schema";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDwZTqFF_-eMJ5lY9TfAEOMJ1ZPvu4lArE",
-  authDomain: "oro-dig.firebaseapp.com",
-  projectId: "oro-dig",
-  storageBucket: "oro-dig.firebasestorage.app",
-  messagingSenderId: "179790537406",
-  appId: "1:179790537406:web:755c259e274cf1755034ef",
-  measurementId: "G-32PM05VNHQ"
-};
-
-const app = initializeApp(firebaseConfig);
-export const firestore = getFirestore(app);
+} = fs;
 
 // Simple auto-increment counters helper using transaction
 async function getNextId(tableName: string): Promise<number> {
   const counterRef = doc(firestore, "counters", tableName);
   let nextId = 1;
-  await runTransaction(firestore, async (transaction) => {
+  await runTransaction(firestore, async (transaction: { get: (ref: unknown) => Promise<{ exists: () => boolean; data: () => { current?: number } }>; update: (ref: unknown, data: object) => void; set: (ref: unknown, data: object) => void }) => {
     const snap = await transaction.get(counterRef);
     if (snap.exists()) {
-      nextId = snap.data().current + 1;
+      nextId = (snap.data().current ?? 0) + 1;
       transaction.update(counterRef, { current: nextId });
     } else {
       transaction.set(counterRef, { current: 1 });
@@ -225,9 +213,9 @@ class FirestoreQueryBuilder {
         }
       }
 
-      const snap = await getDocs(q);
+      const snap = (await getDocs(q)) as { forEach: (fn: (d: { data: () => Record<string, unknown> }) => void) => void };
       let results: any[] = [];
-      snap.forEach(d => {
+      snap.forEach((d) => {
         results.push(sanitizeData(d.data()));
       });
 
@@ -361,4 +349,6 @@ export function desc(field: any) {
   return { field: translateFieldName(field.name), dir: "desc" };
 }
 
+export { getFirestoreBackend, firestore } from "./firestoreBackend.js";
+export { getFirebaseClientConfig, isUsingFirebaseAdmin } from "./firebaseConfig.js";
 export * from "./schema";

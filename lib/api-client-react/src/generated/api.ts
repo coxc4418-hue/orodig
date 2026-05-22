@@ -49,10 +49,18 @@ import type {
   NetworkNode,
   Post,
   PostInput,
+  Prize,
+  PrizeInput,
   Product,
   ProductInput,
   Purchase,
   PurchaseInput,
+  QuincenalWinner,
+  ReferralActionResult,
+  ReferralActivateInput,
+  ReferralCountdown,
+  ReferralRenewInput,
+  ReferralStatus,
   RegisterInput,
   SocialProfile,
   UpdateProfileInput,
@@ -3488,6 +3496,597 @@ export const useCreateConference = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateConferenceMutationOptions(options));
+    }
+
+export const getListPrizesUrl = () => {
+
+
+
+
+  return `/api/community/prizes`
+}
+
+/**
+ * @summary List prize goals (public catalog)
+ */
+export const listPrizes = async ( options?: RequestInit): Promise<Prize[]> => {
+
+  return customFetch<Prize[]>(getListPrizesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPrizesQueryKey = () => {
+    return [
+    `/api/community/prizes`
+    ] as const;
+    }
+
+
+export const getListPrizesQueryOptions = <TData = Awaited<ReturnType<typeof listPrizes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrizes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPrizesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPrizes>>> = ({ signal }) => listPrizes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPrizes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPrizesQueryResult = NonNullable<Awaited<ReturnType<typeof listPrizes>>>
+export type ListPrizesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List prize goals (public catalog)
+ */
+
+export function useListPrizes<TData = Awaited<ReturnType<typeof listPrizes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrizes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPrizesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpsertPrizeUrl = () => {
+
+
+
+
+  return `/api/community/prizes`
+}
+
+/**
+ * @summary Create or update a prize (admin only)
+ */
+export const upsertPrize = async (prizeInput: PrizeInput, options?: RequestInit): Promise<Prize> => {
+
+  return customFetch<Prize>(getUpsertPrizeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      prizeInput,)
+  }
+);}
+
+
+
+
+export const getUpsertPrizeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertPrize>>, TError,{data: BodyType<PrizeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertPrize>>, TError,{data: BodyType<PrizeInput>}, TContext> => {
+
+const mutationKey = ['upsertPrize'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertPrize>>, {data: BodyType<PrizeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertPrize(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertPrizeMutationResult = NonNullable<Awaited<ReturnType<typeof upsertPrize>>>
+    export type UpsertPrizeMutationBody = BodyType<PrizeInput>
+    export type UpsertPrizeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create or update a prize (admin only)
+ */
+export const useUpsertPrize = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertPrize>>, TError,{data: BodyType<PrizeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertPrize>>,
+        TError,
+        {data: BodyType<PrizeInput>},
+        TContext
+      > => {
+      return useMutation(getUpsertPrizeMutationOptions(options));
+    }
+
+export const getListQuincenalWinnersUrl = () => {
+
+
+
+
+  return `/api/community/prizes/quincenal`
+}
+
+/**
+ * @summary Biweekly bonus winners list
+ */
+export const listQuincenalWinners = async ( options?: RequestInit): Promise<QuincenalWinner[]> => {
+
+  return customFetch<QuincenalWinner[]>(getListQuincenalWinnersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListQuincenalWinnersQueryKey = () => {
+    return [
+    `/api/community/prizes/quincenal`
+    ] as const;
+    }
+
+
+export const getListQuincenalWinnersQueryOptions = <TData = Awaited<ReturnType<typeof listQuincenalWinners>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuincenalWinners>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListQuincenalWinnersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listQuincenalWinners>>> = ({ signal }) => listQuincenalWinners({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listQuincenalWinners>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListQuincenalWinnersQueryResult = NonNullable<Awaited<ReturnType<typeof listQuincenalWinners>>>
+export type ListQuincenalWinnersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Biweekly bonus winners list
+ */
+
+export function useListQuincenalWinners<TData = Awaited<ReturnType<typeof listQuincenalWinners>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuincenalWinners>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListQuincenalWinnersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDeletePrizeUrl = (id: number,) => {
+
+
+
+
+  return `/api/community/prizes/${id}`
+}
+
+/**
+ * @summary Delete a prize (admin only)
+ */
+export const deletePrize = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeletePrizeUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePrizeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePrize>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePrize>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deletePrize'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePrize>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePrize(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePrizeMutationResult = NonNullable<Awaited<ReturnType<typeof deletePrize>>>
+
+    export type DeletePrizeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a prize (admin only)
+ */
+export const useDeletePrize = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePrize>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePrize>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeletePrizeMutationOptions(options));
+    }
+
+export const getGetReferralStatusUrl = () => {
+
+
+
+
+  return `/api/referrals/status`
+}
+
+/**
+ * @summary Membership status and days remaining
+ */
+export const getReferralStatus = async ( options?: RequestInit): Promise<ReferralStatus> => {
+
+  return customFetch<ReferralStatus>(getGetReferralStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReferralStatusQueryKey = () => {
+    return [
+    `/api/referrals/status`
+    ] as const;
+    }
+
+
+export const getGetReferralStatusQueryOptions = <TData = Awaited<ReturnType<typeof getReferralStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReferralStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReferralStatus>>> = ({ signal }) => getReferralStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReferralStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReferralStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getReferralStatus>>>
+export type GetReferralStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Membership status and days remaining
+ */
+
+export function useGetReferralStatus<TData = Awaited<ReturnType<typeof getReferralStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReferralStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetReferralCountdownUrl = () => {
+
+
+
+
+  return `/api/referrals/countdown`
+}
+
+/**
+ * @summary Seconds until membership expires
+ */
+export const getReferralCountdown = async ( options?: RequestInit): Promise<ReferralCountdown> => {
+
+  return customFetch<ReferralCountdown>(getGetReferralCountdownUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReferralCountdownQueryKey = () => {
+    return [
+    `/api/referrals/countdown`
+    ] as const;
+    }
+
+
+export const getGetReferralCountdownQueryOptions = <TData = Awaited<ReturnType<typeof getReferralCountdown>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralCountdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReferralCountdownQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReferralCountdown>>> = ({ signal }) => getReferralCountdown({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReferralCountdown>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReferralCountdownQueryResult = NonNullable<Awaited<ReturnType<typeof getReferralCountdown>>>
+export type GetReferralCountdownQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Seconds until membership expires
+ */
+
+export function useGetReferralCountdown<TData = Awaited<ReturnType<typeof getReferralCountdown>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralCountdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReferralCountdownQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getActivateReferralUrl = () => {
+
+
+
+
+  return `/api/referrals/activate`
+}
+
+/**
+ * @summary Activate a member account (admin only)
+ */
+export const activateReferral = async (referralActivateInput: ReferralActivateInput, options?: RequestInit): Promise<ReferralActionResult> => {
+
+  return customFetch<ReferralActionResult>(getActivateReferralUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      referralActivateInput,)
+  }
+);}
+
+
+
+
+export const getActivateReferralMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateReferral>>, TError,{data: BodyType<ReferralActivateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof activateReferral>>, TError,{data: BodyType<ReferralActivateInput>}, TContext> => {
+
+const mutationKey = ['activateReferral'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateReferral>>, {data: BodyType<ReferralActivateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  activateReferral(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateReferralMutationResult = NonNullable<Awaited<ReturnType<typeof activateReferral>>>
+    export type ActivateReferralMutationBody = BodyType<ReferralActivateInput>
+    export type ActivateReferralMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Activate a member account (admin only)
+ */
+export const useActivateReferral = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateReferral>>, TError,{data: BodyType<ReferralActivateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof activateReferral>>,
+        TError,
+        {data: BodyType<ReferralActivateInput>},
+        TContext
+      > => {
+      return useMutation(getActivateReferralMutationOptions(options));
+    }
+
+export const getRenewReferralUrl = () => {
+
+
+
+
+  return `/api/referrals/renew`
+}
+
+/**
+ * @summary Renew membership (self or admin for another member)
+ */
+export const renewReferral = async (referralRenewInput?: ReferralRenewInput, options?: RequestInit): Promise<ReferralActionResult> => {
+
+  return customFetch<ReferralActionResult>(getRenewReferralUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      referralRenewInput,)
+  }
+);}
+
+
+
+
+export const getRenewReferralMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renewReferral>>, TError,{data?: BodyType<ReferralRenewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof renewReferral>>, TError,{data?: BodyType<ReferralRenewInput>}, TContext> => {
+
+const mutationKey = ['renewReferral'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renewReferral>>, {data?: BodyType<ReferralRenewInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  renewReferral(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenewReferralMutationResult = NonNullable<Awaited<ReturnType<typeof renewReferral>>>
+    export type RenewReferralMutationBody = BodyType<ReferralRenewInput> | undefined
+    export type RenewReferralMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Renew membership (self or admin for another member)
+ */
+export const useRenewReferral = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renewReferral>>, TError,{data?: BodyType<ReferralRenewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof renewReferral>>,
+        TError,
+        {data?: BodyType<ReferralRenewInput>},
+        TContext
+      > => {
+      return useMutation(getRenewReferralMutationOptions(options));
     }
 
 export const getUpdateConferenceUrl = (id: number,) => {

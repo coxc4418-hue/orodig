@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type MemberReferralStatus = typeof MemberReferralStatus[keyof typeof MemberReferralStatus];
+export type ReferralStatusReferralStatus = typeof ReferralStatusReferralStatus[keyof typeof ReferralStatusReferralStatus];
 
 
-export const MemberReferralStatus = {
+export const ReferralStatusReferralStatus = {
   VERDE: 'VERDE',
   AMARILLO: 'AMARILLO',
   ROJO: 'ROJO',

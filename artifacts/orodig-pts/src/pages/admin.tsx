@@ -242,6 +242,28 @@ export default function Admin() {
     updateMember.mutate({ id, data: { isActive: !isActive } });
   };
 
+  const activateMembership = useMutation({
+    mutationFn: async (memberId: number) => {
+      const token = localStorage.getItem("orodig_token");
+      const res = await fetch(`${getApiBase()}/api/referrals/activate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ memberId, days: 30 }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "No se pudo activar la membresía");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getAdminListMembersQueryKey() });
+    },
+  });
+
   const handleToggleProduct = (id: number, product: any) => {
     updateProduct.mutate({
       id,
@@ -832,18 +854,29 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs h-8 shrink-0"
-                  onClick={() => handleToggleMember(m.id, m.isActive)}
-                  disabled={updateMember.isPending}
-                >
-                  {m.isActive
-                    ? <><ToggleRight className="w-4 h-4 mr-1 text-green-400" /> Desactivar</>
-                    : <><ToggleLeft className="w-4 h-4 mr-1 text-muted-foreground" /> Activar</>
-                  }
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-8 border-green-500/30 text-green-300 hover:bg-green-500/10"
+                    onClick={() => activateMembership.mutate(m.id)}
+                    disabled={activateMembership.isPending}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" /> Membresía VERDE
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-8"
+                    onClick={() => handleToggleMember(m.id, m.isActive)}
+                    disabled={updateMember.isPending}
+                  >
+                    {m.isActive
+                      ? <><ToggleRight className="w-4 h-4 mr-1 text-green-400" /> Desactivar</>
+                      : <><ToggleLeft className="w-4 h-4 mr-1 text-muted-foreground" /> Activar cuenta</>
+                    }
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

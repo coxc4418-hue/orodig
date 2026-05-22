@@ -27,6 +27,8 @@ tags:
     description: Deposit requests
   - name: network
     description: Referral network tree
+  - name: referrals
+    description: Membership activation and renewal
   - name: admin
     description: Admin-only operations
 
@@ -849,6 +851,133 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conference"
 
+  /community/prizes:
+    get:
+      operationId: listPrizes
+      tags: [community]
+      summary: List prize goals (public catalog)
+      security: []
+      responses:
+        "200":
+          description: Prize list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prize"
+    post:
+      operationId: upsertPrize
+      tags: [community]
+      summary: Create or update a prize (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrizeInput"
+      responses:
+        "200":
+          description: Prize saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prize"
+
+  /community/prizes/quincenal:
+    get:
+      operationId: listQuincenalWinners
+      tags: [community]
+      summary: Biweekly bonus winners list
+      security: []
+      responses:
+        "200":
+          description: Winners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuincenalWinner"
+
+  /community/prizes/{id}:
+    delete:
+      operationId: deletePrize
+      tags: [community]
+      summary: Delete a prize (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /referrals/status:
+    get:
+      operationId: getReferralStatus
+      tags: [referrals]
+      summary: Membership status and days remaining
+      responses:
+        "200":
+          description: Referral status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStatus"
+
+  /referrals/countdown:
+    get:
+      operationId: getReferralCountdown
+      tags: [referrals]
+      summary: Seconds until membership expires
+      responses:
+        "200":
+          description: Countdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralCountdown"
+
+  /referrals/activate:
+    post:
+      operationId: activateReferral
+      tags: [referrals]
+      summary: Activate a member account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralActivateInput"
+      responses:
+        "200":
+          description: Activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralActionResult"
+
+  /referrals/renew:
+    post:
+      operationId: renewReferral
+      tags: [referrals]
+      summary: Renew membership (self or admin for another member)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralRenewInput"
+      responses:
+        "200":
+          description: Renewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralActionResult"
+
   /community/conferences/{id}:
     patch:
       operationId: updateConference
@@ -991,7 +1120,7 @@ components:
           format: date-time
         referralStatus:
           type: string
-          enum: [VERDE, AMARILLO, ROJO, SUSPENDIDO]
+          enum: [VERDE, AMARILLO, ROJO, VENCIDO, SUSPENDIDO]
         expiresAt:
           type: ["string", "null"]
           format: date-time
@@ -1650,3 +1779,124 @@ components:
               type: string
             content:
               type: string
+
+    Prize:
+      type: object
+      required: [id, name, fracciones]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        imageUrl:
+          type: string
+        fracciones:
+          type: integer
+        description:
+          type: string
+        color:
+          type: string
+        borderColor:
+          type: string
+        accentColor:
+          type: string
+        isSpecial:
+          type: boolean
+
+    PrizeInput:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        imageUrl:
+          type: string
+        fracciones:
+          type: integer
+        description:
+          type: string
+        color:
+          type: string
+        borderColor:
+          type: string
+        accentColor:
+          type: string
+        isSpecial:
+          type: boolean
+
+    QuincenalWinner:
+      type: object
+      required: [week, name, amount]
+      properties:
+        week:
+          type: string
+        name:
+          type: string
+        amount:
+          type: number
+
+    ReferralStatus:
+      type: object
+      required: [referralStatus, daysRemaining, msRemaining]
+      properties:
+        referralStatus:
+          type: string
+          enum: [VERDE, AMARILLO, ROJO, VENCIDO, SUSPENDIDO]
+        activatedAt:
+          type: ["string", "null"]
+          format: date-time
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        lastRepurchaseAt:
+          type: ["string", "null"]
+          format: date-time
+        daysRemaining:
+          type: integer
+        msRemaining:
+          type: integer
+
+    ReferralCountdown:
+      type: object
+      required: [secondsRemaining, status]
+      properties:
+        secondsRemaining:
+          type: integer
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        status:
+          type: string
+
+    ReferralActivateInput:
+      type: object
+      required: [memberId]
+      properties:
+        memberId:
+          type: integer
+        days:
+          type: integer
+          default: 30
+
+    ReferralRenewInput:
+      type: object
+      properties:
+        memberId:
+          type: integer
+
+    ReferralActionResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time

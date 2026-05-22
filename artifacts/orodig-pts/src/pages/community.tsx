@@ -59,7 +59,7 @@ export default function Community() {
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   
   const [showAddConference, setShowAddConference] = useState(false);
-  const [newConference, setNewConference] = useState({ title: "", description: "", scheduledAt: "" });
+  const [newConference, setNewConference] = useState({ title: "", description: "", scheduledAt: "", streamUrl: "" });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,7 +120,7 @@ export default function Community() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/community/conferences"] });
         setShowAddConference(false);
-        setNewConference({ title: "", description: "", scheduledAt: "" });
+        setNewConference({ title: "", description: "", scheduledAt: "", streamUrl: "" });
         toast({ title: "Conferencia programada con éxito" });
       }
     }
@@ -148,7 +148,7 @@ export default function Community() {
       data: {
         title: newConference.title,
         description: newConference.description,
-        streamUrl: "",
+        streamUrl: newConference.streamUrl.trim(),
         isLive: false,
         scheduledAt: newConference.scheduledAt ? new Date(newConference.scheduledAt).toISOString() : null,
       }
@@ -161,7 +161,7 @@ export default function Community() {
       data: {
         title: newConference.title,
         description: newConference.description,
-        streamUrl: "",
+        streamUrl: newConference.streamUrl.trim(),
         isLive: true,
         scheduledAt: null,
       }
@@ -379,6 +379,16 @@ export default function Community() {
                       onChange={(e) => setNewConference({ ...newConference, description: e.target.value })}
                       className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground h-10 resize-none"
                       placeholder="Ej: En esta sesión explicaremos..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black">URL de transmisión (YouTube / Vimeo)</label>
+                    <input
+                      type="url"
+                      value={newConference.streamUrl}
+                      onChange={(e) => setNewConference({ ...newConference, streamUrl: e.target.value })}
+                      className="w-full bg-white/3 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-muted-foreground"
+                      placeholder="https://youtube.com/watch?v=..."
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
