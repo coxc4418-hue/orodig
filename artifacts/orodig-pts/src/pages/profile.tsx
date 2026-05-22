@@ -12,6 +12,7 @@ import { useLogout, useUpdateProfile, useListPurchases, getGetMeQueryKey } from 
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getApiBase } from "@/lib/api";
+import { getMembershipDisplay } from "@/lib/membership";
 
 const GOLD = "hsl(42,68%,50%)";
 const RANK_LIST = [
@@ -20,15 +21,6 @@ const RANK_LIST = [
   "Danzanita Verde", "Diamante Fantasía", "Zafiro Amarillo", "Alejandrita Especial", "Accionista ORODIG",
 ];
 const RANK_THRESHOLDS_LIST: number[] = [50, 150, 350, 700, 1200, 2500, 5000, 9000, 15000, 23000, 33000, 48000, 70000, 100000, Infinity];
-
-function getMemberStatus(lastPaymentAt: string | null | undefined): { label: string; color: string; bg: string; daysLeft: number } {
-  if (!lastPaymentAt) return { label: "Sin registro", color: "#6b7280", bg: "#6b728015", daysLeft: 0 };
-  const daysSince = Math.floor((Date.now() - new Date(lastPaymentAt).getTime()) / 86400000);
-  if (daysSince <= 30) return { label: "Verde — Activo", color: "#22c55e", bg: "#22c55e15", daysLeft: 30 - daysSince };
-  if (daysSince <= 60) return { label: "Amarillo — Pendiente", color: "#eab308", bg: "#eab30815", daysLeft: 60 - daysSince };
-  if (daysSince < 180) return { label: "Rojo — Inactivo", color: "#ef4444", bg: "#ef444415", daysLeft: 0 };
-  return { label: "Gris — Eliminado", color: "#6b7280", bg: "#6b728015", daysLeft: 0 };
-}
 
 const TABS = ["Perfil", "Compras"] as const;
 type Tab = typeof TABS[number];
@@ -168,7 +160,7 @@ export default function Profile() {
   const progress = nextRank
     ? Math.min(((totalEarnings - prevThreshold) / (nextThreshold - prevThreshold)) * 100, 100)
     : 100;
-  const memberStatus = getMemberStatus(currentMember.lastPaymentAt);
+  const memberStatus = getMembershipDisplay(currentMember.referralStatus, currentMember.expiresAt);
 
   const isAdmin = currentMember.username === "admin";
 
@@ -348,7 +340,7 @@ export default function Profile() {
                 { icon: Users2, label: "Red Total", value: currentMember.totalNetwork },
                 { icon: Star,   label: "Directos",  value: currentMember.directReferrals },
                 { icon: TrendingUp, label: "Total ganado", value: `$${totalEarnings.toFixed(0)}` },
-                { icon: Shield, label: "Membresía", value: memberStatus.label.split(" — ")[1] ?? memberStatus.label },
+                { icon: Shield, label: "Membresía", value: `${memberStatus.label}${memberStatus.daysRemaining > 0 ? ` (${memberStatus.daysRemaining}d)` : ""}` },
               ].map(({ icon: Icon, label, value }) => (
                 <Card key={label} className="bg-card border-white/5">
                   <CardContent className="p-3 text-center">
@@ -412,15 +404,15 @@ export default function Profile() {
                       <span className="text-base font-black" style={{ color: memberStatus.color }}>{memberStatus.label}</span>
                     </div>
                   </div>
-                  {memberStatus.daysLeft > 0 && (
+                  {memberStatus.daysRemaining > 0 && (
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Días restantes</p>
-                      <p className="text-2xl font-black" style={{ color: memberStatus.color }}>{memberStatus.daysLeft}</p>
+                      <p className="text-2xl font-black" style={{ color: memberStatus.color }}>{memberStatus.daysRemaining}</p>
                     </div>
                   )}
                 </div>
-                {memberStatus.daysLeft > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">Tu próxima recompra es en {memberStatus.daysLeft} días para mantener tu membresía activa.</p>
+                {memberStatus.daysRemaining > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">Tu próxima recompra es en {memberStatus.daysRemaining} días para mantener tu membresía activa.</p>
                 )}
               </CardContent>
             </Card>

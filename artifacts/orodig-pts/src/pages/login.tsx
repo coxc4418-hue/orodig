@@ -132,6 +132,12 @@ export default function Login() {
               )}
             />
 
+            <p className="text-right">
+              <Link href="/forgot-password" className="text-xs text-white/50 hover:text-white underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
+
             <Button
               type="submit"
               className="w-full font-black tracking-widest uppercase h-12 text-black text-sm"
@@ -148,7 +154,8 @@ export default function Login() {
           </form>
         </Form>
 
-        {/* Demo credentials */}
+        {/* Demo credentials — solo desarrollo */}
+        {!import.meta.env.PROD && (
         <div className="mt-4">
           <button
             type="button"
@@ -175,6 +182,7 @@ export default function Login() {
             </div>
           )}
         </div>
+        )}
 
         <div className="mt-4 text-center">
           <p className="text-white/40 text-xs">

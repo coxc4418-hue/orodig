@@ -26,6 +26,25 @@ import { Badge } from "@/components/ui/badge";
 import { RankBadge } from "@/components/layout";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { getApiBase } from "@/lib/api";
+
+async function uploadPostImage(dataUrl: string): Promise<string> {
+  const token = localStorage.getItem("orodig_token");
+  const res = await fetch(`${getApiBase()}/api/community/upload-image`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ image: dataUrl }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al subir imagen");
+  }
+  const { url } = await res.json();
+  return url;
+}
 import {
   Heart,
   MessageSquare,
@@ -101,8 +120,12 @@ export default function Community() {
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // 70% quality compression
-          setPostImageUrl(dataUrl);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          uploadPostImage(dataUrl)
+            .then((url) => setPostImageUrl(url))
+            .catch((err: Error) => {
+              toast({ title: "Error al subir", description: err.message, variant: "destructive" });
+            });
         }
       };
       img.src = event.target?.result as string;

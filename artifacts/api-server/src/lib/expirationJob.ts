@@ -1,31 +1,34 @@
 import { db, membersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
+import { computeReferralStatus } from "./membership";
 
 export async function checkExpiredMemberships(): Promise<void> {
   try {
     const now = new Date();
-    // Query all members to check their status
     const allMembers = (await db.select().from(membersTable)) as any[];
-    
-    let expiredCount = 0;
+
+    let updatedCount = 0;
     for (const member of allMembers) {
-      if (member.referralStatus === "VERDE" && member.expiresAt) {
-        const expTime = new Date(member.expiresAt).getTime();
-        if (now.getTime() > expTime) {
-          // Transition to VENCIDO
-          await db.update(membersTable)
-            .set({ referralStatus: "VENCIDO" })
-            .where(eq(membersTable.id, member.id));
-            
-          logger.info(`[Membership Expirator] Member ${member.username} (ID: ${member.id}) has expired. Status updated to VENCIDO.`);
-          expiredCount++;
-        }
+      if (member.referralStatus === "SUSPENDIDO") continue;
+
+      const expiresAt = member.expiresAt ? new Date(member.expiresAt) : null;
+      const nextStatus = computeReferralStatus(member.referralStatus, expiresAt);
+
+      if (nextStatus !== (member.referralStatus || "ROJO")) {
+        await db.update(membersTable)
+          .set({ referralStatus: nextStatus })
+          .where(eq(membersTable.id, member.id));
+
+        logger.info(
+          `[Membership Expirator] ${member.username} (ID: ${member.id}): ${member.referralStatus} → ${nextStatus}`,
+        );
+        updatedCount++;
       }
     }
     
-    if (expiredCount > 0) {
-      logger.info(`[Membership Expirator] Expiration check completed. Flagged ${expiredCount} expired members.`);
+    if (updatedCount > 0) {
+      logger.info(`[Membership Expirator] Check completed. Updated ${updatedCount} members.`);
     }
   } catch (err: any) {
     logger.error(err, "[Membership Expirator] Error checking expired memberships");

@@ -68,6 +68,15 @@ router.patch("/admin/withdrawals/:id", requireAuth, requireAdmin, async (req: Au
     notes: parsed.data.notes ?? null,
   }).where(eq(withdrawalsTable.id, id)).returning();
 
+  if (parsed.data.status === "approved" || parsed.data.status === "paid") {
+    const [member] = await db.select().from(membersTable).where(eq(membersTable.id, withdrawal.memberId));
+    if (member) {
+      const { sendNotificationEmail, withdrawalApprovedEmail } = await import("../lib/notify.js");
+      const tpl = withdrawalApprovedEmail(parseFloat(withdrawal.amount));
+      void sendNotificationEmail({ to: member.email, subject: tpl.subject, html: tpl.html });
+    }
+  }
+
   res.json({
     id: updated.id,
     memberId: updated.memberId,
@@ -120,9 +129,15 @@ router.patch("/admin/deposits/:id", requireAuth, requireAdmin, async (req: AuthR
   if (parsed.data.status === "approved" && deposit.status === "pending") {
     const [member] = await db.select().from(membersTable).where(eq(membersTable.id, deposit.memberId));
     if (member) {
+      const amount = parseFloat(deposit.amount);
+      const newBalance = parseFloat(member.balance) + amount;
       await db.update(membersTable).set({
-        balance: (parseFloat(member.balance) + parseFloat(deposit.amount)).toString(),
+        balance: newBalance.toString(),
       }).where(eq(membersTable.id, deposit.memberId));
+
+      const { sendNotificationEmail, depositApprovedEmail } = await import("../lib/notify.js");
+      const tpl = depositApprovedEmail(amount, newBalance);
+      void sendNotificationEmail({ to: member.email, subject: tpl.subject, html: tpl.html });
     }
   }
 
@@ -257,6 +272,10 @@ router.patch("/admin/purchases/:id", requireAuth, requireAdmin, async (req: Auth
 
     // Distribuir comisiones MLM
     await distributeMultilevelCommissions(member.id, product.name, totalPrice);
+
+    const { sendNotificationEmail, purchaseApprovedEmail } = await import("../lib/notify.js");
+    const tpl = purchaseApprovedEmail(product.name, pointsEarned);
+    void sendNotificationEmail({ to: member.email, subject: tpl.subject, html: tpl.html });
 
   } else if (parsed.data.status === "rejected") {
     // 2. Reembolsar el saldo debitado al miembro

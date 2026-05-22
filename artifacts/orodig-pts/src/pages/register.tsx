@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useLocation, Link } from "wouter";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +25,7 @@ export default function Register() {
   const { login } = useAuth();
   const { toast } = useToast();
   const registerMutation = useRegister();
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -30,7 +33,11 @@ export default function Register() {
   });
 
   function onSubmit(values: z.infer<typeof registerSchema>) {
-    registerMutation.mutate({ data: values }, {
+    if (!acceptTerms) {
+      toast({ title: "Términos requeridos", description: "Debes aceptar los términos y la política de privacidad.", variant: "destructive" });
+      return;
+    }
+    registerMutation.mutate({ data: { ...values, acceptTerms: true } as typeof values & { acceptTerms: boolean } }, {
       onSuccess: (res) => {
         login(res.token, res.member);
         setLocation("/splash");
@@ -132,9 +139,16 @@ export default function Register() {
                 <FormMessage className="text-xs" />
               </FormItem>
             )} />
+            <div className="flex items-start gap-2 pt-1">
+              <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} />
+              <label htmlFor="terms" className="text-xs text-white/70 leading-snug cursor-pointer">
+                Acepto los <Link href="/legal" className="underline" style={{ color: "hsl(42,68%,55%)" }}>términos</Link>
+                {" "}y la <Link href="/privacy" className="underline" style={{ color: "hsl(42,68%,55%)" }}>política de privacidad</Link>.
+              </label>
+            </div>
             <Button
               type="submit"
-              disabled={registerMutation.isPending}
+              disabled={registerMutation.isPending || !acceptTerms}
               className="w-full font-black tracking-widest uppercase h-11 text-black text-sm mt-3"
               style={{
                 background: "linear-gradient(135deg, hsl(42,68%,40%), hsl(42,68%,56%), hsl(42,68%,44%))",

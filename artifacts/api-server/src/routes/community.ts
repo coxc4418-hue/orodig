@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { z } from "zod";
+import { uploadCommunityImage } from "../lib/storage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const {
@@ -32,6 +33,26 @@ async function getMemberMini(id: number) {
   if (!m) return null;
   return { id: m.id, username: m.username, fullName: m.fullName, avatarUrl: m.avatarUrl ?? null, rank: m.rank };
 }
+
+// POST /community/upload-image — sube imagen a Firebase Storage (no base64 en Firestore)
+const UploadImageBody = z.object({
+  image: z.string().min(1),
+  mimeType: z.string().optional(),
+});
+
+router.post("/community/upload-image", requireAuth, async (req: AuthRequest, res): Promise<void> => {
+  const parsed = UploadImageBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  try {
+    const url = await uploadCommunityImage(req.memberId!, parsed.data.image, parsed.data.mimeType);
+    res.json({ url });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || "Error al subir imagen" });
+  }
+});
 
 // ─── POSTS ──────────────────────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@ import { LoginBody, RegisterBody, GetMeResponse } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 import { addEarning, checkAndUpgradeRank } from "../lib/rankHelper";
 import { checkAndBypassInactiveSponsors } from "../lib/bypassHelper";
+import { computeReferralStatus } from "../lib/membership";
 import { z } from "zod";
 
 const router: IRouter = Router();
@@ -37,7 +38,7 @@ function formatMember(m: typeof membersTable.$inferSelect, sponsorName?: string 
     sponsorName: sponsorName ?? null,
     avatarUrl: m.avatarUrl,
     lastPaymentAt: m.lastPaymentAt ? m.lastPaymentAt.toISOString() : null,
-    referralStatus: m.referralStatus || "ROJO",
+    referralStatus: computeReferralStatus(m.referralStatus, m.expiresAt),
     activatedAt: m.activatedAt ? m.activatedAt.toISOString() : null,
     expiresAt: m.expiresAt ? m.expiresAt.toISOString() : null,
     lastRepurchaseAt: m.lastRepurchaseAt ? m.lastRepurchaseAt.toISOString() : null,
@@ -77,6 +78,11 @@ router.post("/auth/register", async (req: any, res: any): Promise<void> => {
     return;
   }
   const { username, password, fullName, email, phone, referralCode } = parsed.data;
+
+  if (!(req.body as { acceptTerms?: boolean }).acceptTerms) {
+    res.status(400).json({ error: "Debes aceptar los términos y la política de privacidad" });
+    return;
+  }
 
   const [existingUser] = await db.select().from(membersTable).where(eq(membersTable.username, username));
   if (existingUser) {
@@ -242,6 +248,55 @@ router.put("/auth/profile", requireAuth, async (req: any, res: any): Promise<voi
 
 router.post("/auth/logout", (_req: any, res: any): void => {
   res.json({ success: true });
+});
+
+const ForgotPasswordBody = z.object({
+  email: z.string().email(),
+});
+
+router.post("/auth/forgot-password", async (req: any, res: any): Promise<void> => {
+  const parsed = ForgotPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.email, parsed.data.email));
+  if (!member) {
+    res.json({ success: true, message: "Si el correo existe, recibirás un enlace de recuperación." });
+    return;
+  }
+
+  try {
+    const { createRequire } = await import("node:module");
+    const require = createRequire(import.meta.url);
+    const { initializeApp, getApps, cert } = require("firebase-admin/app");
+    const { getAuth } = require("firebase-admin/auth");
+
+    if (!getApps().length && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      initializeApp({
+        credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+        projectId: process.env.FIREBASE_PROJECT_ID || "oro-dig",
+      });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://oro-dig.web.app";
+    const link = await getAuth().generatePasswordResetLink(parsed.data.email, {
+      url: `${frontendUrl}/`,
+    });
+
+    const { sendNotificationEmail } = await import("../lib/notify.js");
+    await sendNotificationEmail({
+      to: parsed.data.email,
+      subject: "Restablecer contraseña — ORODIG PTS",
+      html: `<p>Hola ${member.fullName},</p><p><a href="${link}">Haz clic aquí para restablecer tu contraseña</a>.</p><p>Si no solicitaste esto, ignora este mensaje.</p>`,
+    });
+
+    res.json({ success: true, message: "Si el correo existe, recibirás un enlace de recuperación." });
+  } catch (err: any) {
+    logger.error({ err }, "forgot-password failed");
+    res.status(500).json({ error: "No se pudo enviar el correo de recuperación. Contacta soporte." });
+  }
 });
 
 export default router;

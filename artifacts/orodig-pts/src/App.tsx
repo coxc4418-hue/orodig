@@ -22,6 +22,9 @@ import Plan from "@/pages/plan";
 import Rangos from "@/pages/rangos";
 import Community from "@/pages/community";
 import ConferenceRoom from "@/pages/conference-room";
+import Legal from "@/pages/legal";
+import Privacy from "@/pages/privacy";
+import ForgotPassword from "@/pages/forgot-password";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +65,9 @@ function Router() {
     <Switch>
       <Route path="/"         component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/legal"    component={Legal} />
+      <Route path="/privacy"  component={Privacy} />
       <Route path="/splash"   component={Splash} />
       <Route path="/:rest*"   component={ProtectedRoutes} />
     </Switch>
