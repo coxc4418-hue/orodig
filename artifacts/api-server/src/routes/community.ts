@@ -416,7 +416,7 @@ const SEED_PRIZES = [
     id: 1,
     name: "Moto",
     emoji: "🏍️",
-    imageUrl: "",
+    imageUrl: "/prizes/moto.png",
     fracciones: 300000,
     description: "Moto de alta gama financiada por ORODIG PTS para los mejores líderes.",
     color: "from-orange-500/20 to-amber-500/10",
@@ -428,7 +428,7 @@ const SEED_PRIZES = [
     id: 2,
     name: "Carro",
     emoji: "🚗",
-    imageUrl: "",
+    imageUrl: "/prizes/carro.png",
     fracciones: 900000,
     description: "Vehículo deportivo financiado para los líderes más destacados de la plataforma.",
     color: "from-red-500/20 to-rose-500/10",
@@ -440,7 +440,7 @@ const SEED_PRIZES = [
     id: 3,
     name: "Casa de Lujo",
     emoji: "🏠",
-    imageUrl: "",
+    imageUrl: "/prizes/casa.png",
     fracciones: 2000000,
     description: "Casa de lujo con 1 baño, 1 cocina, 1 sala y 2 cuartos. Premio exclusivo ORODIG PTS.",
     color: "from-purple-500/20 to-violet-500/10",
@@ -452,7 +452,7 @@ const SEED_PRIZES = [
     id: 4,
     name: "Viaje Exclusivo",
     emoji: "✈️",
-    imageUrl: "",
+    imageUrl: "/prizes/viaje.png",
     fracciones: 0,
     description: "Todo gratis × 3 días y 2 noches. Incluye comidas, hospedaje, refrigerios y transporte. Será un paseo inolvidable.",
     color: "from-blue-500/20 to-cyan-500/10",
@@ -475,6 +475,16 @@ router.get("/community/prizes", async (req, res): Promise<void> => {
         await setDoc(doc(firestore, "prizes", prize.id.toString()), prize);
       }
       prizes = SEED_PRIZES;
+    } else {
+      // Update existing seed prizes that have no image with the seed imageUrl
+      const { setDoc } = await import("firebase/firestore/lite");
+      for (const seedPrize of SEED_PRIZES) {
+        const existing = prizes.find(p => p.id === seedPrize.id);
+        if (existing && !existing.imageUrl && seedPrize.imageUrl) {
+          existing.imageUrl = seedPrize.imageUrl;
+          await setDoc(doc(firestore, "prizes", seedPrize.id.toString()), { ...existing, imageUrl: seedPrize.imageUrl }, { merge: true });
+        }
+      }
     }
     
     prizes.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));

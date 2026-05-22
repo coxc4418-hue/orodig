@@ -77,77 +77,106 @@ export default function Premios() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((n) => (
-            <Card key={n} className="h-40 border border-white/5 bg-white/3 animate-pulse" />
+            <Card key={n} className="h-64 border border-white/5 bg-white/3 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {(prizes || []).map((prize) => {
             const progress = prize.fracciones > 0 ? Math.min((userPoints / prize.fracciones) * 100, 100) : 100;
             const remaining = Math.max(prize.fracciones - userPoints, 0);
             const achieved = prize.fracciones > 0 ? userPoints >= prize.fracciones : true;
 
             return (
-              <Card key={prize.id} className={`relative overflow-hidden border bg-gradient-to-br ${prize.color || "from-amber-500/10 to-yellow-500/5"} ${prize.borderColor || "border-white/10"}`}>
-                {achieved && (
-                  <div className="absolute top-3 right-3">
-                    <Badge className="text-[10px] font-black uppercase" style={{ background: prize.accentColor, color: "white" }}>
-                      ¡Logrado!
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    {prize.imageUrl ? (
-                      <img src={prize.imageUrl} alt={prize.name} className="w-12 h-12 rounded-xl object-cover border border-white/15 shrink-0" />
-                    ) : (
-                      <div className="text-4xl">{prize.emoji}</div>
-                    )}
-                    <div>
-                      <CardTitle className="text-lg font-black text-white">{prize.name}</CardTitle>
+              <Card key={prize.id} className={`relative overflow-hidden border bg-gradient-to-br ${prize.color || "from-amber-500/10 to-yellow-500/5"} ${prize.borderColor || "border-white/10"} group transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/30`}>
+                {/* Hero image */}
+                {prize.imageUrl && (
+                  <div className="relative w-full h-44 overflow-hidden">
+                    <img
+                      src={prize.imageUrl}
+                      alt={prize.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0" style={{
+                      background: `linear-gradient(to top, hsl(0 0% 5% / 0.95) 0%, hsl(0 0% 5% / 0.4) 50%, transparent 100%)`
+                    }} />
+                    {/* Name overlay on image */}
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-xl font-black text-white drop-shadow-lg">{prize.name}</h3>
                       {!prize.isSpecial && (
-                        <p className="text-xs font-bold" style={{ color: prize.accentColor }}>
+                        <p className="text-xs font-bold drop-shadow-md" style={{ color: prize.accentColor }}>
                           {prize.fracciones.toLocaleString("es-CO")} fracciones
+                        </p>
+                      )}
+                      {prize.isSpecial && (
+                        <p className="text-xs font-bold drop-shadow-md" style={{ color: prize.accentColor }}>
+                          Premio Especial de Liderazgo
                         </p>
                       )}
                     </div>
                   </div>
-                </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-xs text-muted-foreground leading-relaxed">{prize.description}</p>
-
-                {prize.isSpecial ? (
-                  <div className="rounded-lg p-3" style={{ background: `${prize.accentColor}15`, border: `1px solid ${prize.accentColor}30` }}>
-                    <p className="text-xs font-bold text-center" style={{ color: prize.accentColor }}>
-                      Premio para los mejores líderes de la empresa
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-center">
-                      {["Comidas", "Hospedaje", "Refrigerios", "Transporte"].map(item => (
-                        <div key={item} className="text-[11px] font-semibold text-white/80 bg-white/5 rounded px-2 py-1">{item}</div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Progreso</span>
-                        <span className="font-bold" style={{ color: prize.accentColor }}>{progress.toFixed(1)}%</span>
-                      </div>
-                      <Progress value={progress} className="h-2" style={{ "--progress-bg": prize.accentColor } as React.CSSProperties} />
-                    </div>
-                    {!achieved && (
-                      <p className="text-xs text-muted-foreground">
-                        Te faltan <span className="font-bold text-white">{remaining.toLocaleString("es-CO")}</span> fracciones
-                      </p>
-                    )}
-                  </>
                 )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+
+                {/* Fallback when no image — show emoji */}
+                {!prize.imageUrl && (
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-4xl">{prize.emoji}</div>
+                      <div>
+                        <CardTitle className="text-lg font-black text-white">{prize.name}</CardTitle>
+                        {!prize.isSpecial && (
+                          <p className="text-xs font-bold" style={{ color: prize.accentColor }}>
+                            {prize.fracciones.toLocaleString("es-CO")} fracciones
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                )}
+
+                {achieved && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <Badge className="text-[10px] font-black uppercase shadow-lg" style={{ background: prize.accentColor, color: "white" }}>
+                      ¡Logrado!
+                    </Badge>
+                  </div>
+                )}
+
+                <CardContent className="space-y-3 pt-4">
+                  <p className="text-xs text-muted-foreground leading-relaxed">{prize.description}</p>
+
+                  {prize.isSpecial ? (
+                    <div className="rounded-lg p-3" style={{ background: `${prize.accentColor}15`, border: `1px solid ${prize.accentColor}30` }}>
+                      <p className="text-xs font-bold text-center" style={{ color: prize.accentColor }}>
+                        Premio para los mejores líderes de la empresa
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-center">
+                        {["Comidas", "Hospedaje", "Refrigerios", "Transporte"].map(item => (
+                          <div key={item} className="text-[11px] font-semibold text-white/80 bg-white/5 rounded px-2 py-1">{item}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Progreso</span>
+                          <span className="font-bold" style={{ color: prize.accentColor }}>{progress.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={progress} className="h-2" style={{ "--progress-bg": prize.accentColor } as React.CSSProperties} />
+                      </div>
+                      {!achieved && (
+                        <p className="text-xs text-muted-foreground">
+                          Te faltan <span className="font-bold text-white">{remaining.toLocaleString("es-CO")}</span> fracciones
+                        </p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {/* Bono Quincenal */}
